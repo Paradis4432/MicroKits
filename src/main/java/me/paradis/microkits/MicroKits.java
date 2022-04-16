@@ -31,4 +31,9 @@ public final class MicroKits extends JavaPlugin {
     public static MicroKits getInstance() {
         return instance;
     }
+
+    /**
+     * TODO:
+     * add perms
+     */
 }

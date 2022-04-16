@@ -8,4 +8,3 @@ commands:
   microkits:
     description: manage micro kits
     usage: /[microkits|mk] [new|edit] [name]
-    permission: microkits.*
