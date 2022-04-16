@@ -1,0 +1,6 @@
+name: MicroKits
+version: '${project.version}'
+main: me.paradis.microkits.MicroKits
+api-version: 1.18
+authors: [ Paradis ]
+description: a clickable kit system for servers
