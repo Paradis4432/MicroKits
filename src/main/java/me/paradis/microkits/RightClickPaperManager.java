@@ -46,6 +46,7 @@ public class RightClickPaperManager implements Listener {
             p.getInventory().addItem(c.getItemStack(id + ".contents." + key));
         });
 
+        e.setCancelled(true);
         p.getInventory().remove(item);
         System.out.println("item removed");
         p.sendMessage("you have claimed a kit");

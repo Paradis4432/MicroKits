@@ -18,9 +18,14 @@ public final class MicroKits extends JavaPlugin {
         // if next unique id is null set to 0
         if (!config.contains("nextUniqueID")) config.set("nextUniqueID", 0);
 
-        getServer().getPluginManager().registerEvents(new RightClickPaperManager(), this);
+        GuiManager guiManager = new GuiManager();
 
-        this.getCommand("microkits").setExecutor(new CommandManager());
+        getServer().getPluginManager().registerEvents(new RightClickPaperManager(), this);
+        getServer().getPluginManager().registerEvents(guiManager, this);
+
+        this.getCommand("microkits").setExecutor(guiManager);
+
+        //delete
         this.getCommand("addNBT").setExecutor(new nbtCommandManager());
 
         getLogger().info("MicroKits Enabled - Made by Paradis");
