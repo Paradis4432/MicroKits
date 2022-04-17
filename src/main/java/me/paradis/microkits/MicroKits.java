@@ -15,10 +15,12 @@ public final class MicroKits extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
 
+        // if next unique id is null set to 0
+        if (!config.contains("nextUniqueID")) config.set("nextUniqueID", 0);
+
         getServer().getPluginManager().registerEvents(new RightClickPaperManager(), this);
 
         this.getCommand("microkits").setExecutor(new CommandManager());
-
         this.getCommand("addNBT").setExecutor(new nbtCommandManager());
 
         getLogger().info("MicroKits Enabled - Made by Paradis");
@@ -33,9 +35,4 @@ public final class MicroKits extends JavaPlugin {
     public static MicroKits getInstance() {
         return instance;
     }
-
-    /**
-     * TODO:
-     * add perms
-     */
 }

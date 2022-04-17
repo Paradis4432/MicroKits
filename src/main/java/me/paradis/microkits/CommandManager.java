@@ -13,9 +13,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.UUID;
 
 public class CommandManager implements CommandExecutor {
+
+    private FileConfiguration c = MicroKits.getInstance().getConfig();
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -30,15 +31,13 @@ public class CommandManager implements CommandExecutor {
         Player p = (Player) sender;
 
         if (args.length == 1){
-            if (args[0].equalsIgnoreCase("edit")){
-                // open new edit kit gui with id from nbt tag
-                p.sendMessage("opening edit kit gui");
-                return true;
-            }
+            return false;
         }
 
         if (args.length > 1){
             if (args[0].equalsIgnoreCase("new")){
+
+                // if player has enough space add item, otherwise cancel here
 
                 // get the new name for the kit
                 StringJoiner joiner = new StringJoiner(" ");
@@ -58,14 +57,19 @@ public class CommandManager implements CommandExecutor {
                 // set nbt tags
                 NBTItem nbti = new NBTItem(newKit);
                 nbti.setBoolean("microKitsPaper", true);
-                nbti.setInteger("id", getNextUniqueID());
+
+                int id = getUniqueIDForKit();
+                nbti.setInteger("id", id);
+                updateUniqueId();
                 nbti.setUUID("owner", p.getUniqueId());
-                nbti.setBoolean("full", false);
                 //nbti.setString("display", null); deletes the display name of item
 
                 newKit = nbti.getItem();
 
+                // gives item and opens gui to save new items
                 p.getInventory().addItem(newKit);
+                new GuiManager().newKitGui(p, id, p.getUniqueId());
+
                 p.sendMessage("you were given a new kit");
                 return true;
             }
@@ -74,7 +78,11 @@ public class CommandManager implements CommandExecutor {
         return true;
     }
 
-    public Integer getNextUniqueID(){
-        return 2;
+    public Integer getUniqueIDForKit(){
+        return c.getInt("nextUniqueID");
+    }
+
+    public void updateUniqueId(){
+        c.set("nextUniqueID", ((c.getInt("nextUniqueID")) + 1));
     }
 }
