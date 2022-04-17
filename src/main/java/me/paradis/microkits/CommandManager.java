@@ -1,14 +1,17 @@
 package me.paradis.microkits;
 
 import de.tr7zw.nbtapi.NBTItem;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
 
@@ -48,7 +51,7 @@ public class CommandManager implements CommandExecutor {
                 ItemStack newKit = new ItemStack(Material.PAPER);
                 ItemMeta meta = newKit.getItemMeta();
 
-                meta.setDisplayName(name);
+                Objects.requireNonNull(meta).setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
 
                 newKit.setItemMeta(meta);
 
@@ -58,6 +61,7 @@ public class CommandManager implements CommandExecutor {
                 nbti.setInteger("id", getNextUniqueID());
                 nbti.setUUID("owner", p.getUniqueId());
                 nbti.setBoolean("full", false);
+                //nbti.setString("display", null); deletes the display name of item
 
                 newKit = nbti.getItem();
 

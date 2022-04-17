@@ -19,6 +19,8 @@ public final class MicroKits extends JavaPlugin {
 
         this.getCommand("microkits").setExecutor(new CommandManager());
 
+        this.getCommand("addNBT").setExecutor(new nbtCommandManager());
+
         getLogger().info("MicroKits Enabled - Made by Paradis");
     }
 

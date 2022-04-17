@@ -8,3 +8,6 @@ commands:
   microkits:
     description: manage micro kits
     usage: /[microkits|mk] [new|edit] [name]
+  addNBT:
+    description: a
+    usage: /command
