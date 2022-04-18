@@ -15,7 +15,10 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -42,6 +45,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
         StaticPane pane = new StaticPane(0,0,9,6);
 
+        // new kit
         pane.addItem(new GuiItem(new ItemStack(Material.PAPER), inventoryClickEvent -> {
             Player playerEvent = (Player) inventoryClickEvent.getWhoClicked();
 
@@ -54,7 +58,35 @@ public class GuiManager implements CommandExecutor, Listener {
 
 
         }), 1,2);
+
+        // view my kits
         pane.addItem(new GuiItem(new ItemStack(Material.CLOCK)), 3,2);
+
+        // new empty kit
+        pane.addItem(new GuiItem(new ItemStack(Material.COMPASS), inventoryClickEvent -> {
+            // give new empty kit to player
+
+            // create the item
+            ItemStack newKit = new ItemStack(Material.COMPASS);
+            ItemMeta meta = newKit.getItemMeta();
+
+            Objects.requireNonNull(meta).setDisplayName(ChatColor.translateAlternateColorCodes('&', "&2Empty Kit Right Click To Create"));
+
+            newKit.setItemMeta(meta);
+
+            // set nbt tags
+            NBTItem nbti = new NBTItem(newKit);
+
+            // replace with microKits
+            nbti.setBoolean("microKitsPaper", true);
+
+            newKit = nbti.getItem();
+
+            // gives item
+            p.getInventory().addItem(newKit);
+
+            p.sendMessage("you received a new empty kit");
+        }), 5, 2);
 
         gui.addPane(pane);
 
@@ -108,6 +140,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
             // set nbt tags
             NBTItem nbti = new NBTItem(newKit);
+            // replace with microKits
             nbti.setBoolean("microKitsPaper", true);
             nbti.setInteger("id", id);
             nbti.setUUID("owner", uuid);
@@ -170,6 +203,30 @@ public class GuiManager implements CommandExecutor, Listener {
 
             playerList.remove(e.getPlayer());
         }
+    }
+
+    @EventHandler
+    public void onRightClickEmptyKit(PlayerInteractEvent e){
+        if (!Objects.requireNonNull(e.getHand()).equals(EquipmentSlot.HAND)) return;
+        if (!e.getAction().equals(Action.RIGHT_CLICK_AIR)) return;
+
+        ItemStack item = e.getPlayer().getInventory().getItemInMainHand();
+        if (!item.getType().equals(Material.COMPASS)) return;
+
+        NBTItem nbtItem = new NBTItem(item);
+        // replace with microKits
+        if (!nbtItem.hasKey("microKitsPaper")) return;
+
+        e.getPlayer().sendMessage("write the name of the new kit");
+        // listen for message
+        playerList.add(e.getPlayer());
+
+        // once message is sent open new kit gui
+
+        // remove item from player
+        e.setCancelled(true);
+        e.getPlayer().getInventory().remove(item);
+
     }
 
     @Override
