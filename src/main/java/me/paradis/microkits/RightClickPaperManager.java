@@ -40,15 +40,19 @@ public class RightClickPaperManager implements Listener {
 
         // take items from config and give to player
         Objects.requireNonNull(c.getConfigurationSection(id + ".contents")).getKeys(false).forEach(key -> {
-            System.out.println("adding item: ");
-            System.out.println(c.getItemStack(id + ".contents." + key));
+            ItemStack itemStack = c.getItemStack(id + ".contents." + key);
 
-            p.getInventory().addItem(c.getItemStack(id + ".contents." + key));
+            // removes nbt tag added by inventory framework
+            if (itemStack == null) return;
+            NBTItem nbtItem = new NBTItem(itemStack);
+            nbtItem.removeKey("PublicBukkitValues");
+            itemStack = nbtItem.getItem();
+
+            p.getInventory().addItem(itemStack);
         });
 
         e.setCancelled(true);
         p.getInventory().remove(item);
-        System.out.println("item removed");
         p.sendMessage("you have claimed a kit");
     }
 }

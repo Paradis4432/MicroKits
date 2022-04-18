@@ -2,6 +2,7 @@ package me.paradis.microkits;
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
+import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import de.tr7zw.nbtapi.NBTItem;
 import org.bukkit.Bukkit;
@@ -29,6 +30,9 @@ public class GuiManager implements CommandExecutor, Listener {
 
     private ArrayList<Player> playerList = new ArrayList<>();
 
+    /**
+     * main menu to handle details
+     */
     public void openMainGui(Player p) {
         ChestGui gui = new ChestGui(6, "Close to save new kit");
 
@@ -58,6 +62,18 @@ public class GuiManager implements CommandExecutor, Listener {
 
     }
 
+    /**
+     * opens a gui to add items for new kit
+     * missing:
+     * perms
+     * limits
+     * cancel button
+     * check if player has enough space in inv
+     * save created kit inv player's kits
+     *
+     * @param p to show the inv
+     * @param name of the new kit
+     */
     public void newKitGui(Player p, String name){
         // id = getNextID()
         int id = getAndUpdateNextKitUUID();
@@ -108,6 +124,39 @@ public class GuiManager implements CommandExecutor, Listener {
         gui.show(p);
     }
 
+    /**
+     * opens a gui to allow a player to preview a kit
+     * if kit has no id send message error
+     */
+    public void previewKitGui(Player p){
+        ItemStack itemInHand = p.getInventory().getItemInMainHand();
+        NBTItem nbtItem = new NBTItem(itemInHand);
+        if (!nbtItem.hasKey("id")){
+            p.sendMessage("error while trying to preview kit, no id found");
+            return;
+        }
+        int kitID = nbtItem.getInteger("id");
+
+        // create gui and add items in pane
+        ChestGui gui = new ChestGui(6, "previewing kit id: " + kitID);
+
+        gui.setOnGlobalClick(event -> event.setCancelled(true));
+
+
+
+        OutlinePane  pane = new OutlinePane(0,0,9,6);
+
+        if (c.getConfigurationSection(kitID + ".contents") == null){
+            p.sendMessage("error contents of kit is null");
+            return;
+        }
+        for (String key : c.getConfigurationSection(kitID + ".contents").getKeys(false)){
+            pane.addItem(new GuiItem(Objects.requireNonNull(c.getItemStack(kitID + ".contents." + key))));
+        }
+        gui.addPane(pane);
+
+        gui.show(p);
+    }
     @EventHandler
     public void onMessageSentForNameOfKit(AsyncPlayerChatEvent e){
         if (playerList.contains(e.getPlayer())){
@@ -129,7 +178,11 @@ public class GuiManager implements CommandExecutor, Listener {
             sender.sendMessage("cant use this command from console");
             return false;
         }
-        if (args.length == 0) openMainGui((Player) sender);
+        Player p = (Player) sender;
+        if (args.length == 0) openMainGui(p);
+        else if (args.length == 1) {
+            if (args[0].equalsIgnoreCase("preview")) previewKitGui(p);
+        }
         else return false;
         return true;
     }
