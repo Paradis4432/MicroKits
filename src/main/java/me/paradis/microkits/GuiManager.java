@@ -218,21 +218,35 @@ public class GuiManager implements CommandExecutor, Listener {
 
         gui.setOnGlobalClick(event -> event.setCancelled(true));
 
-
-
-        OutlinePane  pane = new OutlinePane(0,0,9,6);
+        //OutlinePane  pane = new OutlinePane(0,0,9,6);
+        StaticPane pane = new StaticPane(0,0,9,6);
 
         if (c.getConfigurationSection(kitID + ".contents") == null){
-            p.sendMessage("error contents of kit is null");
+            p.sendMessage("error: contents of kit is null");
             return;
         }
+
         for (String key : c.getConfigurationSection(kitID + ".contents").getKeys(false)){
-            pane.addItem(new GuiItem(Objects.requireNonNull(c.getItemStack(kitID + ".contents." + key))));
+            // key is the slot number as int
+            // key: 11 -> y 1 x 2
+
+            int x = 0;
+            int y = 0;
+            int keyInt = Integer.parseInt(key);
+
+            while(keyInt > 8){
+                y++;
+                keyInt -= 9;
+            }
+            x = keyInt;
+
+            pane.addItem(new GuiItem(Objects.requireNonNull(c.getItemStack(kitID + ".contents." + key))), x,y);
         }
         gui.addPane(pane);
 
         gui.show(p);
     }
+
     @EventHandler
     public void onMessageSentForNameOfKit(AsyncPlayerChatEvent e){
         if (playerList.contains(e.getPlayer())){
