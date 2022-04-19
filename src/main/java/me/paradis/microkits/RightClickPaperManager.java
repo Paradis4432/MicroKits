@@ -12,6 +12,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RightClickPaperManager implements Listener {
 
@@ -35,21 +36,30 @@ public class RightClickPaperManager implements Listener {
         if (!nbti.hasKey("microKitsPaper")) return;
 
         int id = nbti.getInteger("id");
-        System.out.println("id is " + id);
+
         // check if player has enough space for kit
+        boolean overFilled = false;
 
         // take items from config and give to player
-        Objects.requireNonNull(c.getConfigurationSection(id + ".contents")).getKeys(false).forEach(key -> {
+        for (String key : Objects.requireNonNull(c.getConfigurationSection(id + ".contents")).getKeys(false)) {
             ItemStack itemStack = c.getItemStack(id + ".contents." + key);
 
             // removes nbt tag added by inventory framework
-            if (itemStack == null) return;
+            if (itemStack == null) continue;
             NBTItem nbtItem = new NBTItem(itemStack);
             nbtItem.removeKey("PublicBukkitValues");
             itemStack = nbtItem.getItem();
 
-            p.getInventory().addItem(itemStack);
-        });
+            if (p.getInventory().firstEmpty() == -1) {
+                // no more free slots
+                overFilled = true;
+                // stash extra items
+                c.set("stashed." + p.getUniqueId() + "." + key, itemStack);
+
+            } else p.getInventory().addItem(itemStack);
+        }
+        if (overFilled) p.sendMessage("found more items than free slots, stashing the rest. to claim them open the main gui" +
+                " and click the ender chest");
 
         e.setCancelled(true);
         p.getInventory().remove(item);

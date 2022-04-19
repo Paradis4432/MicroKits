@@ -12,6 +12,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -20,6 +21,7 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -88,6 +90,17 @@ public class GuiManager implements CommandExecutor, Listener {
             p.sendMessage("you received a new empty kit");
         }), 5, 2);
 
+        // stashed items
+        pane.addItem(new GuiItem(new ItemStack(Material.ENDER_CHEST), inventoryClickEvent -> {
+            // give player stashed items
+            Objects.requireNonNull(c.getConfigurationSection("stashed." + p.getUniqueId())).getKeys(false).forEach(key -> {
+                if (p.getInventory().firstEmpty() != -1) return;
+
+                p.getInventory().addItem(c.getItemStack("stashed." + p.getUniqueId() + "." + key));
+                c.set("stashed." + p.getUniqueId() + "." + key, null);
+            });
+
+        }), 0, 5);
         gui.addPane(pane);
 
         gui.show(p);
@@ -117,9 +130,17 @@ public class GuiManager implements CommandExecutor, Listener {
         gui.setOnClose(event -> {
             Inventory inv = gui.getInventory();
 
+            // prevent empty kit
+            if (inv.isEmpty()){
+                event.getPlayer().sendMessage("you cant save an empty kit");
+                return;
+            }
+
             c.set(id + ".owner", uuid.toString());
             c.set(id + ".kitName", name);
             // save inv.getContents
+
+            //replace with inv.getContents?
             for (int i = 0; i < inv.getSize(); i++) {
                 if (inv.getItem(i) == null) continue;
 
@@ -128,13 +149,35 @@ public class GuiManager implements CommandExecutor, Listener {
                 System.out.println("inv saved");
             }
 
-            // if player has enough space add item, otherwise cancel here
-
             // create the item
             ItemStack newKit = new ItemStack(Material.PAPER);
             ItemMeta meta = newKit.getItemMeta();
 
+            // add enchant
+            meta.addEnchant(Enchantment.LUCK, 1, true);
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+
+            // set display name
             Objects.requireNonNull(meta).setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+
+            // set lore to id and list of items
+            ArrayList<String> lore = new ArrayList<>();
+
+            lore.add("Kit ID: " + id);
+
+            //replace with inv.getContents?
+            for (int i = 0; i < inv.getSize(); i++) {
+                if (inv.getItem(i) == null) continue;
+
+                ItemStack currentItem = inv.getItem(i);
+
+                if (currentItem.getItemMeta().hasDisplayName())
+                    lore.add(currentItem.getType() + " x " + currentItem.getAmount() + " name: " + currentItem.getItemMeta().getDisplayName() );
+                else
+                    lore.add(currentItem.getType() + " x " + currentItem.getAmount());
+            }
+
+            meta.setLore(lore);
 
             newKit.setItemMeta(meta);
 
