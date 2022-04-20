@@ -33,7 +33,7 @@ public class RightClickPaperManager implements Listener {
 
         NBTItem nbti = new NBTItem(item);
 
-        if (!nbti.hasKey("microKitsPaper")) return;
+        if (!nbti.hasKey("microKits")) return;
 
         int id = nbti.getInteger("id");
 
