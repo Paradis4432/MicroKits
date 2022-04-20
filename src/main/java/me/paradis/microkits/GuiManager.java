@@ -2,7 +2,6 @@ package me.paradis.microkits;
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
-import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import de.tr7zw.nbtapi.NBTItem;
 import org.bukkit.Bukkit;
@@ -32,6 +31,7 @@ import java.util.UUID;
 public class GuiManager implements CommandExecutor, Listener {
 
     private FileConfiguration c = MicroKits.getInstance().getConfig();
+    private MessagesManager mm = new MessagesManager();
 
     private ArrayList<Player> playerList = new ArrayList<>();
 
@@ -62,7 +62,7 @@ public class GuiManager implements CommandExecutor, Listener {
         }), 1,2);
 
         // view my kits
-        pane.addItem(new GuiItem(new ItemStack(Material.CLOCK)), 3,2);
+        pane.addItem(new GuiItem(new ItemStack(Material.BOOK)), 3,2);
 
         // new empty kit
         pane.addItem(new GuiItem(new ItemStack(Material.COMPASS), inventoryClickEvent -> {
@@ -80,7 +80,7 @@ public class GuiManager implements CommandExecutor, Listener {
             NBTItem nbti = new NBTItem(newKit);
 
             // replace with microKits
-            nbti.setBoolean("microKitsPaper", true);
+            nbti.setBoolean("microKits", true);
 
             newKit = nbti.getItem();
 
@@ -101,6 +101,17 @@ public class GuiManager implements CommandExecutor, Listener {
             });
 
         }), 0, 5);
+
+        // player language
+        pane.addItem(new GuiItem(new ItemStack(Material.REDSTONE_TORCH), inventoryClickEvent -> {
+            selectLanPlayer((Player) inventoryClickEvent.getWhoClicked());
+        }), 7, 2);
+
+        // server language and messages
+        pane.addItem(new GuiItem(new ItemStack(Material.REDSTONE_BLOCK), inventoryClickEvent -> {
+            selectLanServer((Player) inventoryClickEvent.getWhoClicked());
+        }), 8, 5);
+
         gui.addPane(pane);
 
         gui.show(p);
@@ -184,7 +195,7 @@ public class GuiManager implements CommandExecutor, Listener {
             // set nbt tags
             NBTItem nbti = new NBTItem(newKit);
             // replace with microKits
-            nbti.setBoolean("microKitsPaper", true);
+            nbti.setBoolean("microKits", true);
             nbti.setInteger("id", id);
             nbti.setUUID("owner", uuid);
             //nbti.setString("display", null); deletes the display name of item
@@ -247,6 +258,64 @@ public class GuiManager implements CommandExecutor, Listener {
         gui.show(p);
     }
 
+    /**
+     * allows the player to select a custom language in case the one defined by the server is not good
+     */
+    public void selectLanPlayer(Player p){
+        ChestGui gui = new ChestGui(3, "Select your language");
+
+        gui.setOnGlobalClick(event -> event.setCancelled(true));
+
+        StaticPane pane = new StaticPane(0,0,9,3);
+
+        // spanish
+        pane.addItem(new GuiItem(new ItemStack(Material.STONE_BUTTON), inventoryClickEvent -> {
+            // set player's language to spanish
+            mm.setPlayerLan((Player) inventoryClickEvent.getWhoClicked(), "es");
+
+        }), 3,1);
+
+        // english
+        pane.addItem(new GuiItem(new ItemStack(Material.OAK_BUTTON), inventoryClickEvent -> {
+            // set player's language to english
+            mm.setPlayerLan((Player) inventoryClickEvent.getWhoClicked(), "en");
+        }), 5,1);
+
+        gui.addPane(pane);
+
+        gui.show(p);
+    }
+
+    /**
+     * sets a default language and allows staff to define custom messages for each action
+     */
+    public void selectLanServer(Player p){
+        ChestGui gui = new ChestGui(3, "Select language to edit messages");
+
+        gui.setOnGlobalClick(event -> event.setCancelled(true));
+
+        StaticPane pane = new StaticPane(0,0,9,3);
+
+        // spanish
+        pane.addItem(new GuiItem(new ItemStack(Material.STONE_BUTTON), inventoryClickEvent -> {
+            // show list of messages and allow to edit each one
+
+            // show paginated gui of messages in spanish
+
+        }), 3,1);
+
+        // english
+        pane.addItem(new GuiItem(new ItemStack(Material.OAK_BUTTON), inventoryClickEvent -> {
+            // show list of messages and allow to edit each one
+
+            // show paginated gui of messages in spanish
+        }), 5,1);
+
+        gui.addPane(pane);
+
+        gui.show(p);
+    }
+
     @EventHandler
     public void onMessageSentForNameOfKit(AsyncPlayerChatEvent e){
         if (playerList.contains(e.getPlayer())){
@@ -262,6 +331,9 @@ public class GuiManager implements CommandExecutor, Listener {
         }
     }
 
+    /**
+     * added here since its mostly part of the gui
+     */
     @EventHandler
     public void onRightClickEmptyKit(PlayerInteractEvent e){
         if (!Objects.requireNonNull(e.getHand()).equals(EquipmentSlot.HAND)) return;
@@ -270,9 +342,15 @@ public class GuiManager implements CommandExecutor, Listener {
         ItemStack item = e.getPlayer().getInventory().getItemInMainHand();
         if (!item.getType().equals(Material.COMPASS)) return;
 
+        // check if player is already creating a kit
+        if (playerList.contains(e.getPlayer())){
+            e.getPlayer().sendMessage("you are already creating a kit");
+            return;
+        }
+
         NBTItem nbtItem = new NBTItem(item);
         // replace with microKits
-        if (!nbtItem.hasKey("microKitsPaper")) return;
+        if (!nbtItem.hasKey("microKits")) return;
 
         e.getPlayer().sendMessage("write the name of the new kit");
         // listen for message
@@ -296,6 +374,13 @@ public class GuiManager implements CommandExecutor, Listener {
         if (args.length == 0) openMainGui(p);
         else if (args.length == 1) {
             if (args[0].equalsIgnoreCase("preview")) previewKitGui(p);
+            if (args[0].equalsIgnoreCase("checkLan")) new MessagesManager().getAllMessageOfLan("en");
+            if (args[0].equalsIgnoreCase("set")){
+                new MessagesManager().setMessageOfLan("en", "test0", "value of test0");
+                new MessagesManager().setMessageOfLan("en", "test1", "value of test1");
+                new MessagesManager().setMessageOfLan("en", "test2", "value of test2");
+                new MessagesManager().setMessageOfLan("en", "test3", "value of test3");
+            }
         }
         else return false;
         return true;
