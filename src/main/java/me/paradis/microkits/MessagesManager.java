@@ -1,11 +1,12 @@
 package me.paradis.microkits;
 
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * manages messages and language
@@ -51,21 +52,49 @@ public class MessagesManager {
     }
 
     // get all messages
+    public ArrayList<String> getAllLanMessages(String lan){
+        ArrayList<String> messages = new ArrayList<>();
+
+        for (String key : getAllKeysOfLan(lan)){
+            messages.add(c.getString("serverMessages." + lan + "." + key + ".message"));
+        }
+
+        return messages;
+    }
 
     // get all display names
+    public ArrayList<String> getAllDisplayNames(String lan){
+        ArrayList<String> displays = new ArrayList<>();
 
-    public String getMessage(String lan, String path){
-        return c.getString("serverMessages." + lan + "." + path + ".message");
+        for (String key : getAllKeysOfLan(lan)){
+            displays.add(c.getString("serverMessages." + lan + "." + key + ".display"));
+        }
+
+        return displays;
+    }
+
+    public String getMessage(String path){
+        // lan is default value unless player has custom lan set
+        String lan = c.getString("lan");
+        // add check for player
+
+        // check if path is null and remove objects.require non null
+
+        return ChatColor.translateAlternateColorCodes('&',
+                Objects.requireNonNull(c.getString("serverMessages." + lan + "." + path + ".message")));
     }
 
     /**
      * sets a message of a language
-     * @param lan
-     * @param messageToEdit
      * @param message new message to be set
      */
     public void setMessageOfLan(String lan,String messageToEdit, String message){
-
+        c.set("serverMessages." + lan + "." + messageToEdit + ".message", message);
     }
+
+    public void setDisplayOfLan(String lan, String messageToEdit, String display){
+        c.set("serverMessages." + lan + "." + messageToEdit + ".display", display);
+    }
+
 
 }

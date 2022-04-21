@@ -52,7 +52,7 @@ public class GuiManager implements CommandExecutor, Listener {
             Player playerEvent = (Player) inventoryClickEvent.getWhoClicked();
 
             // send player message "enter new name of kit"
-            playerEvent.sendMessage("Enter message of kit");
+            playerEvent.sendMessage("Enter name of kit");
 
             // close gui, save player in list
             playerEvent.closeInventory();
@@ -99,6 +99,8 @@ public class GuiManager implements CommandExecutor, Listener {
                 p.getInventory().addItem(c.getItemStack("stashed." + p.getUniqueId() + "." + key));
                 c.set("stashed." + p.getUniqueId() + "." + key, null);
             });
+
+            p.sendMessage("you claimed your stashed items");
 
         }), 0, 5);
 
@@ -157,7 +159,6 @@ public class GuiManager implements CommandExecutor, Listener {
 
                 c.set(id + ".contents." + i, inv.getItem(i));
                 MicroKits.getInstance().saveConfig();
-                System.out.println("inv saved");
             }
 
             // create the item
@@ -374,12 +375,16 @@ public class GuiManager implements CommandExecutor, Listener {
         if (args.length == 0) openMainGui(p);
         else if (args.length == 1) {
             if (args[0].equalsIgnoreCase("preview")) previewKitGui(p);
-            if (args[0].equalsIgnoreCase("checkLan")) new MessagesManager().getAllMessageOfLan("en");
+            if (args[0].equalsIgnoreCase("checkLan")) new MessagesManager().getAllLanMessages("en");
             if (args[0].equalsIgnoreCase("set")){
                 new MessagesManager().setMessageOfLan("en", "test0", "value of test0");
                 new MessagesManager().setMessageOfLan("en", "test1", "value of test1");
                 new MessagesManager().setMessageOfLan("en", "test2", "value of test2");
                 new MessagesManager().setMessageOfLan("en", "test3", "value of test3");
+            }
+            if (args[0].equalsIgnoreCase("setLan")){
+                new MessagesManager().setLan("test");
+                MicroKits.getInstance().saveConfig();
             }
         }
         else return false;
