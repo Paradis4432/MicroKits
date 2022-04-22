@@ -66,6 +66,33 @@ public final class MicroKits extends JavaPlugin {
         c.addDefault(smen + "claimedStashedItems" + m, "&6You claimed your stashed items");
         c.addDefault(smen + "claimedStashedItems" + d, "message on player claiming stash");
 
+        c.addDefault(smen + "cancelEmptyKitCreation" + m, "&cYou can not save an empty kit");
+        c.addDefault(smen + "cancelEmptyKitCreation" + d, "message on player saving empty kit");
+
+        c.addDefault(smen + "newKitSaved" + m, "&6New kit saved - Right click paper to claim it");
+        c.addDefault(smen + "newKitSaved" + d, "message on player saving new kit");
+
+        c.addDefault(smen + "errorPreviewKit" + m, "&cError while trying to preview kit");
+        c.addDefault(smen + "errorPreviewKit" + d, "message on error previewing kit");
+
+        c.addDefault(smen + "errorPreviewKitEmpty" + m, "&cThe contents of this kit was not found");
+        c.addDefault(smen + "errorPreviewKitEmpty" + d, "message on previewing kit with no items");
+
+        c.addDefault(smen + "errorAlreadyCreatingKit" + m, "&cYou are already creating a kit");
+        c.addDefault(smen + "errorAlreadyCreatingKit" + d, "message on player attempting to create two kits at the same time");
+
+        c.addDefault(smen + "overfilledPlayerInv" + m, "&6Found more items than free slots in your inv, the remaining items were saved on your stash, to claim these, right click the ender chest in the main gui");
+        c.addDefault(smen + "overfilledPlayerInv" + d, "message on overfilled player inventory");
+
+        c.addDefault(smen + "kitClaimed" + m, "&6You have claimed a kit");
+        c.addDefault(smen + "kitClaimed" + d, "message on player claim kit");
+
+        c.addDefault(smen + "lanChanged" + m, "&6Language changed");
+        c.addDefault(smen + "lanChanged" + d, "message on player changing language");
+
+        c.addDefault(smen + "newMessageSet" + m, "&6Type in chat the new message for this action");
+        c.addDefault(smen + "newMessageSet" + d, "message on admin changing message of action");
+
         c.options().copyDefaults(true);
         saveConfig();
     }

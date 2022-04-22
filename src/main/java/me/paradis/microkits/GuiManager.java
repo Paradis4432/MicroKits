@@ -153,7 +153,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
             // prevent empty kit
             if (inv.isEmpty()){
-                event.getPlayer().sendMessage("you cant save an empty kit");
+                event.getPlayer().sendMessage(mm.getMessage("cancelEmptyKitCreation"));
                 return;
             }
 
@@ -215,7 +215,7 @@ public class GuiManager implements CommandExecutor, Listener {
             // gives item and opens gui to save new items
             p.getInventory().addItem(newKit);
 
-            p.sendMessage("new kit saved");
+            p.sendMessage(mm.getMessage("newKitSaved"));
         });
 
         gui.show(p);
@@ -229,7 +229,7 @@ public class GuiManager implements CommandExecutor, Listener {
         ItemStack itemInHand = p.getInventory().getItemInMainHand();
         NBTItem nbtItem = new NBTItem(itemInHand);
         if (!nbtItem.hasKey("id")){
-            p.sendMessage("error while trying to preview kit, no id found");
+            p.sendMessage(mm.getMessage("errorPreviewKit"));
             return;
         }
         int kitID = nbtItem.getInteger("id");
@@ -243,7 +243,7 @@ public class GuiManager implements CommandExecutor, Listener {
         StaticPane pane = new StaticPane(0,0,9,6);
 
         if (c.getConfigurationSection(kitID + ".contents") == null){
-            p.sendMessage("error: contents of kit is null");
+            p.sendMessage(mm.getMessage("errorPreviewKitEmpty"));
             return;
         }
 
@@ -282,7 +282,7 @@ public class GuiManager implements CommandExecutor, Listener {
         pane.addItem(new GuiItem(new ItemStack(Material.STONE_BUTTON), inventoryClickEvent -> {
             // set player's language to spanish
             mm.setPlayerLan((Player) inventoryClickEvent.getWhoClicked(), "es");
-            inventoryClickEvent.getWhoClicked().sendMessage("language changed");
+            inventoryClickEvent.getWhoClicked().sendMessage(mm.getMessage("lanChanged"));
 
         }), 3,1);
 
@@ -290,7 +290,7 @@ public class GuiManager implements CommandExecutor, Listener {
         pane.addItem(new GuiItem(new ItemStack(Material.OAK_BUTTON), inventoryClickEvent -> {
             // set player's language to english
             mm.setPlayerLan((Player) inventoryClickEvent.getWhoClicked(), "en");
-            inventoryClickEvent.getWhoClicked().sendMessage("language changed");
+            inventoryClickEvent.getWhoClicked().sendMessage(mm.getMessage("lanChanged"));
 
         }), 5,1);
 
@@ -361,7 +361,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
                 player.closeInventory();
 
-                player.sendMessage("type in chat the new message for this action");
+                player.sendMessage(mm.getMessage("newMessageSet"));
 
                 // on message send: mm.setMessageOfLan(lanCache.get(player)[0], lanCache.get(player)[1], messageSent);
 
@@ -392,33 +392,35 @@ public class GuiManager implements CommandExecutor, Listener {
         // set message id 1
         // set title id 2
 
-        if (pendingPlayersInChat.containsKey(e.getPlayer())){
-            // set message to name of kit
-            e.setCancelled(true);
-            Player p = e.getPlayer();
+        if (!pendingPlayersInChat.containsKey(e.getPlayer())) return;
 
-            switch (pendingPlayersInChat.get(p)) {
-                case 0:
-                    Bukkit.getScheduler().runTask(MicroKits.getInstance(), () -> {
-                        // once player sends message open new kit gui
-                        newKitGui(e.getPlayer(), e.getMessage());
-                    });
-                    break;
-                case 1:
-                    // setting message in config file
-                    mm.setMessageOfLan(pendingMessageChangeInChat.get(p).get(0), pendingMessageChangeInChat.get(p).get(1), e.getMessage());
+        // set message to name of kit
+        e.setCancelled(true);
+        Player p = e.getPlayer();
 
-                    p.sendMessage("action " + pendingMessageChangeInChat.get(p).get(1) + " message set to " + e.getMessage());
+        switch (pendingPlayersInChat.get(p)) {
+            case 0:
+                Bukkit.getScheduler().runTask(MicroKits.getInstance(), () -> {
+                    // once player sends message open new kit gui
+                    newKitGui(e.getPlayer(), e.getMessage());
+                });
+                break;
+            case 1:
+                // setting message in config file
+                mm.setMessageOfLan(pendingMessageChangeInChat.get(p).get(0), pendingMessageChangeInChat.get(p).get(1), e.getMessage());
 
-                    pendingMessageChangeInChat.remove(p);
-                    break;
-                case 2:
-                    // setting title in config file
-                    break;
-            }
+                p.sendMessage("action " + pendingMessageChangeInChat.get(p).get(1) + " message set to " + e.getMessage());
 
-            pendingPlayersInChat.remove(p);
+                pendingMessageChangeInChat.remove(p);
+                break;
+            case 2:
+                // setting title in config file
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + pendingPlayersInChat.get(p));
         }
+
+        pendingPlayersInChat.remove(p);
     }
 
     /**
@@ -434,7 +436,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
         // check if player is already creating a kit
         if (pendingPlayersInChat.containsKey(e.getPlayer())){
-            e.getPlayer().sendMessage("you are already creating a kit");
+            e.getPlayer().sendMessage(mm.getMessage("errorAlreadyCreatingKit"));
             return;
         }
 
@@ -442,7 +444,7 @@ public class GuiManager implements CommandExecutor, Listener {
         // replace with microKits
         if (!nbtItem.hasKey("microKits")) return;
 
-        e.getPlayer().sendMessage("write the name of the new kit");
+        e.getPlayer().sendMessage(mm.getMessage("nameOfKitInChat"));
         // listen for message
         pendingPlayersInChat.put(e.getPlayer(), 0);
 
