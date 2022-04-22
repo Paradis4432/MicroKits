@@ -2,6 +2,7 @@ package me.paradis.microkits;
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem;
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui;
+import com.github.stefvanschie.inventoryframework.pane.OutlinePane;
 import com.github.stefvanschie.inventoryframework.pane.StaticPane;
 import de.tr7zw.nbtapi.NBTItem;
 import org.bukkit.Bukkit;
@@ -24,16 +25,23 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class GuiManager implements CommandExecutor, Listener {
 
     private FileConfiguration c = MicroKits.getInstance().getConfig();
     private MessagesManager mm = new MessagesManager();
 
-    private ArrayList<Player> playerList = new ArrayList<>();
+    /**
+     * hashmap<Player, int> made to listen for player message
+     * if int = 0: listening for kit name
+     * if int = 1: listening for new message for config
+     * if int = 2: listening for new title for config
+     */
+    //private ArrayList<Player> playerList = new ArrayList<>();
+    private HashMap<Player, Integer> pendingPlayersInChat = new HashMap<>();
+    private HashMap<Player, ArrayList<String>> pendingMessageChangeInChat = new HashMap<>();
+
 
     /**
      * main menu to handle details
@@ -52,11 +60,11 @@ public class GuiManager implements CommandExecutor, Listener {
             Player playerEvent = (Player) inventoryClickEvent.getWhoClicked();
 
             // send player message "enter new name of kit"
-            playerEvent.sendMessage("Enter name of kit");
+            playerEvent.sendMessage(mm.getMessage("nameOfKitInChat"));
 
             // close gui, save player in list
             playerEvent.closeInventory();
-            playerList.add(playerEvent);
+            pendingPlayersInChat.put(playerEvent, 0);
 
 
         }), 1,2);
@@ -87,7 +95,7 @@ public class GuiManager implements CommandExecutor, Listener {
             // gives item
             p.getInventory().addItem(newKit);
 
-            p.sendMessage("you received a new empty kit");
+            p.sendMessage(mm.getMessage("receivedNewEmptyKit"));
         }), 5, 2);
 
         // stashed items
@@ -100,7 +108,7 @@ public class GuiManager implements CommandExecutor, Listener {
                 c.set("stashed." + p.getUniqueId() + "." + key, null);
             });
 
-            p.sendMessage("you claimed your stashed items");
+            p.sendMessage(mm.getMessage("claimedStashedItems"));
 
         }), 0, 5);
 
@@ -183,8 +191,9 @@ public class GuiManager implements CommandExecutor, Listener {
 
                 ItemStack currentItem = inv.getItem(i);
 
+                assert currentItem != null;
                 if (currentItem.getItemMeta().hasDisplayName())
-                    lore.add(currentItem.getType() + " x " + currentItem.getAmount() + " name: " + currentItem.getItemMeta().getDisplayName() );
+                    lore.add(currentItem.getType() + " x " + currentItem.getAmount() + " name: " + currentItem.getItemMeta().getDisplayName());
                 else
                     lore.add(currentItem.getType() + " x " + currentItem.getAmount());
             }
@@ -273,6 +282,7 @@ public class GuiManager implements CommandExecutor, Listener {
         pane.addItem(new GuiItem(new ItemStack(Material.STONE_BUTTON), inventoryClickEvent -> {
             // set player's language to spanish
             mm.setPlayerLan((Player) inventoryClickEvent.getWhoClicked(), "es");
+            inventoryClickEvent.getWhoClicked().sendMessage("language changed");
 
         }), 3,1);
 
@@ -280,6 +290,8 @@ public class GuiManager implements CommandExecutor, Listener {
         pane.addItem(new GuiItem(new ItemStack(Material.OAK_BUTTON), inventoryClickEvent -> {
             // set player's language to english
             mm.setPlayerLan((Player) inventoryClickEvent.getWhoClicked(), "en");
+            inventoryClickEvent.getWhoClicked().sendMessage("language changed");
+
         }), 5,1);
 
         gui.addPane(pane);
@@ -301,15 +313,16 @@ public class GuiManager implements CommandExecutor, Listener {
         pane.addItem(new GuiItem(new ItemStack(Material.STONE_BUTTON), inventoryClickEvent -> {
             // show list of messages and allow to edit each one
 
-            // show paginated gui of messages in spanish
-
+            Player player = (Player) inventoryClickEvent.getWhoClicked();
+            showMessagesGui(player, "es");
         }), 3,1);
 
         // english
         pane.addItem(new GuiItem(new ItemStack(Material.OAK_BUTTON), inventoryClickEvent -> {
             // show list of messages and allow to edit each one
 
-            // show paginated gui of messages in spanish
+            Player player = (Player) inventoryClickEvent.getWhoClicked();
+            showMessagesGui(player, "en");
         }), 5,1);
 
         gui.addPane(pane);
@@ -317,18 +330,94 @@ public class GuiManager implements CommandExecutor, Listener {
         gui.show(p);
     }
 
+    public void showMessagesGui(Player p , String lan){
+        ChestGui gui = new ChestGui(6, "editing messages");
+
+        gui.setOnGlobalClick(event -> event.setCancelled(true));
+
+        OutlinePane pane = new OutlinePane(0,0,9,6);
+
+        List<String> messages = mm.getAllLanMessages(lan);
+        List<String> displays = mm.getAllLanDisplays(lan);
+        List<String> keys = mm.getAllKeysOfLanAsList(lan);
+
+        assert messages.size() > 0 && displays.size() > 0;
+        assert messages.size() == displays.size();
+
+        for (int i = 0; i < messages.size(); i++) {
+            int finalI = i;
+            pane.addItem(new GuiItem(itemStackBuilder(Material.PAPER, displays.get(i), messages.get(i)), event -> {
+                // listen for player's next message with int id 1
+                // add player to playerList with id 1
+                Player player = (Player) event.getWhoClicked();
+                pendingPlayersInChat.put(player, 1);
+
+                // add player to another hashmap lanCache <Player, [String Lan, String key]> for lan selection
+                ArrayList<String> data = new ArrayList<>();
+                data.add(lan);
+                data.add(keys.get(finalI));
+
+                pendingMessageChangeInChat.put(player, data);
+
+                player.closeInventory();
+
+                player.sendMessage("type in chat the new message for this action");
+
+                // on message send: mm.setMessageOfLan(lanCache.get(player)[0], lanCache.get(player)[1], messageSent);
+
+            }));
+        }
+
+        gui.addPane(pane);
+
+        gui.show(p);
+    }
+
+    public ItemStack itemStackBuilder(Material mat, String name, String lore){
+        ItemStack item = new ItemStack(mat);
+        ItemMeta meta = item.getItemMeta();
+
+        assert meta != null;
+        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+        meta.setLore(Collections.singletonList(ChatColor.translateAlternateColorCodes('&', lore)));
+
+        item.setItemMeta(meta);
+
+        return item;
+    }
+
     @EventHandler
     public void onMessageSentForNameOfKit(AsyncPlayerChatEvent e){
-        if (playerList.contains(e.getPlayer())){
+        // set name of kit id 0
+        // set message id 1
+        // set title id 2
+
+        if (pendingPlayersInChat.containsKey(e.getPlayer())){
             // set message to name of kit
             e.setCancelled(true);
+            Player p = e.getPlayer();
 
-            Bukkit.getScheduler().runTask(MicroKits.getInstance(), () -> {
-                // once player sends message open new kit gui
-                newKitGui(e.getPlayer(), e.getMessage());
-            });
+            switch (pendingPlayersInChat.get(p)) {
+                case 0:
+                    Bukkit.getScheduler().runTask(MicroKits.getInstance(), () -> {
+                        // once player sends message open new kit gui
+                        newKitGui(e.getPlayer(), e.getMessage());
+                    });
+                    break;
+                case 1:
+                    // setting message in config file
+                    mm.setMessageOfLan(pendingMessageChangeInChat.get(p).get(0), pendingMessageChangeInChat.get(p).get(1), e.getMessage());
 
-            playerList.remove(e.getPlayer());
+                    p.sendMessage("action " + pendingMessageChangeInChat.get(p).get(1) + " message set to " + e.getMessage());
+
+                    pendingMessageChangeInChat.remove(p);
+                    break;
+                case 2:
+                    // setting title in config file
+                    break;
+            }
+
+            pendingPlayersInChat.remove(p);
         }
     }
 
@@ -344,7 +433,7 @@ public class GuiManager implements CommandExecutor, Listener {
         if (!item.getType().equals(Material.COMPASS)) return;
 
         // check if player is already creating a kit
-        if (playerList.contains(e.getPlayer())){
+        if (pendingPlayersInChat.containsKey(e.getPlayer())){
             e.getPlayer().sendMessage("you are already creating a kit");
             return;
         }
@@ -355,7 +444,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
         e.getPlayer().sendMessage("write the name of the new kit");
         // listen for message
-        playerList.add(e.getPlayer());
+        pendingPlayersInChat.put(e.getPlayer(), 0);
 
         // once message is sent open new kit gui
 
@@ -385,6 +474,9 @@ public class GuiManager implements CommandExecutor, Listener {
             if (args[0].equalsIgnoreCase("setLan")){
                 new MessagesManager().setLan("test");
                 MicroKits.getInstance().saveConfig();
+            }
+            if (args[0].equalsIgnoreCase("setMessage")){
+                new MessagesManager().setMessageOfLan("en", "nameOfKitInChat", "&6&lit works omg omg UwU");
             }
         }
         else return false;

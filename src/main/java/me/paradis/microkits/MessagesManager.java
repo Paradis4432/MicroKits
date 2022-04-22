@@ -51,6 +51,10 @@ public class MessagesManager {
         return Objects.requireNonNull(c.getConfigurationSection("serverMessages." + lan)).getKeys(false);
     }
 
+    public ArrayList<String> getAllKeysOfLanAsList(String lan){
+        return new ArrayList<>(getAllKeysOfLan(lan));
+    }
+
     // get all messages
     public ArrayList<String> getAllLanMessages(String lan){
         ArrayList<String> messages = new ArrayList<>();
@@ -63,7 +67,7 @@ public class MessagesManager {
     }
 
     // get all display names
-    public ArrayList<String> getAllDisplayNames(String lan){
+    public ArrayList<String> getAllLanDisplays(String lan){
         ArrayList<String> displays = new ArrayList<>();
 
         for (String key : getAllKeysOfLan(lan)){

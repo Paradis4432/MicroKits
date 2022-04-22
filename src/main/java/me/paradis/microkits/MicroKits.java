@@ -55,8 +55,16 @@ public final class MicroKits extends JavaPlugin {
         String m = ".message";
         String d = ".display";
 
-        c.addDefault(smen + "enterKitName" + m, "&6&lPlease type in chat the new name for the kit");
-        c.addDefault(smen + "enterKitName" + d, "when asking for kit name in chat");
+        c.addDefault("lan", "en");
+
+        c.addDefault(smen + "nameOfKitInChat" + m, "&6Please type the name of the new kit in chat");
+        c.addDefault(smen + "nameOfKitInChat" + d, "message sent when asking for name of kit");
+
+        c.addDefault(smen + "receivedNewEmptyKit" + m, "&6You received a new empty kit");
+        c.addDefault(smen + "receivedNewEmptyKit" + d, "message on player getting new empty kit");
+
+        c.addDefault(smen + "claimedStashedItems" + m, "&6You claimed your stashed items");
+        c.addDefault(smen + "claimedStashedItems" + d, "message on player claiming stash");
 
         c.options().copyDefaults(true);
         saveConfig();
