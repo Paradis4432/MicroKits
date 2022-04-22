@@ -6,8 +6,50 @@ authors: [ Paradis ]
 description: a clickable kit system for servers
 commands:
   microkits:
-    description: manage micro kits
-    usage: /[microkits|mk] [new|edit] [name]
-  addNBT:
-    description: a
-    usage: /command
+    description: opens main gui
+    usage: /<command>
+    permission: microkits.open
+    permission-message: You can't use this command
+
+permissions:
+  microkits.*:
+    description: access to all commands
+    default: op
+    children:
+      microkits.open: true
+      microkits.newKit: true
+      microkits.viewKits: true
+      microkits.newEmptyKit.create: true
+      microkits.newEmptyKit.claim: true
+      microkits.stash: true
+      microkits.playerLan: true
+      microkits.serverLan: true
+      microkits.preview: true
+  microkits.open:
+    description: allows the player to open the main gui
+    default: op
+  microkits.newKit:
+    description: allow the player to create a new kit
+    default: op
+  microkits.viewKits:
+    description: allow the player to view and create his own kits
+    default: op
+  microkits.newEmptyKit.create:
+    description: allow the player to create empty kit item
+    default: op
+  microkits.newEmptyKit.claim:
+    description: allow the player to claim any empty kit
+    default: op
+  microkits.stash:
+    description: allow the player to claim his stashed items
+    default: op
+  microkits.playerLan:
+    description: allow the player to edit his own language
+    default: op
+  microkits.serverLan:
+    description: allow the player to edit the server language
+    default: op
+  microkits.preview:
+    description: allow the player to preview any kit
+    default: op
+

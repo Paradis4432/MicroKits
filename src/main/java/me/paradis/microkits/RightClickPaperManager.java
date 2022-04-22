@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RightClickPaperManager implements Listener {
 
     private FileConfiguration c = MicroKits.getInstance().getConfig();
+    private MessagesManager mm = new MessagesManager();
 
     /**
      * handles right click of paper, if kit is full, gives items, otherwise open gui to set
@@ -37,11 +38,17 @@ public class RightClickPaperManager implements Listener {
 
         int id = nbti.getInteger("id");
 
+        // check if kit is null in config
+        if (c.get(String.valueOf(id)) == null){
+            p.sendMessage(mm.getMessage("kitNotFound"));
+            return;
+        }
+
         // check if player has enough space for kit
         boolean overFilled = false;
 
         // take items from config and give to player
-        for (String key : Objects.requireNonNull(c.getConfigurationSection(id + ".contents")).getKeys(false)) {
+        for (String key : c.getConfigurationSection(id + ".contents").getKeys(false)) {
             ItemStack itemStack = c.getItemStack(id + ".contents." + key);
 
             // removes nbt tag added by inventory framework
@@ -58,11 +65,15 @@ public class RightClickPaperManager implements Listener {
 
             } else p.getInventory().addItem(itemStack);
         }
-        if (overFilled) p.sendMessage("found more items than free slots, stashing the rest. to claim them open the main gui" +
-                " and click the ender chest");
+
+        // remove kit from config
+        c.set(String.valueOf(id), null);
+
+
+        if (overFilled) p.sendMessage(mm.getMessage("overfilledPlayerInv"));
 
         e.setCancelled(true);
         p.getInventory().remove(item);
-        p.sendMessage("you have claimed a kit");
+        p.sendMessage(mm.getMessage("kitClaimed"));
     }
 }

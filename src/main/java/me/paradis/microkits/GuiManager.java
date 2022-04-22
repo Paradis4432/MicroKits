@@ -56,76 +56,131 @@ public class GuiManager implements CommandExecutor, Listener {
         StaticPane pane = new StaticPane(0,0,9,6);
 
         // new kit
-        pane.addItem(new GuiItem(new ItemStack(Material.PAPER), inventoryClickEvent -> {
-            Player playerEvent = (Player) inventoryClickEvent.getWhoClicked();
+        if (p.hasPermission("microkits.newKit")){
+            pane.addItem(new GuiItem(new ItemStack(Material.PAPER), inventoryClickEvent -> {
+                Player playerEvent = (Player) inventoryClickEvent.getWhoClicked();
 
-            // send player message "enter new name of kit"
-            playerEvent.sendMessage(mm.getMessage("nameOfKitInChat"));
+                // send player message "enter new name of kit"
+                playerEvent.sendMessage(mm.getMessage("nameOfKitInChat"));
 
-            // close gui, save player in list
-            playerEvent.closeInventory();
-            pendingPlayersInChat.put(playerEvent, 0);
+                // close gui, save player in list
+                playerEvent.closeInventory();
+                pendingPlayersInChat.put(playerEvent, 0);
 
-
-        }), 1,2);
+            }), 1,2);
+        }
 
         // view my kits
-        pane.addItem(new GuiItem(new ItemStack(Material.BOOK)), 3,2);
+        if (p.hasPermission("microkits.viewKits")){
+            pane.addItem(new GuiItem(new ItemStack(Material.BOOK), inventoryClickEvent -> {
+                showPlayerKits((Player) inventoryClickEvent.getWhoClicked());
+            }), 3,2);
+
+        }
 
         // new empty kit
-        pane.addItem(new GuiItem(new ItemStack(Material.COMPASS), inventoryClickEvent -> {
-            // give new empty kit to player
+        if (p.hasPermission("microkits.newEmptyKit.create")){
+            pane.addItem(new GuiItem(new ItemStack(Material.COMPASS), inventoryClickEvent -> {
+                // give new empty kit to player
 
-            // create the item
-            ItemStack newKit = new ItemStack(Material.COMPASS);
-            ItemMeta meta = newKit.getItemMeta();
+                // create the item
+                ItemStack newKit = new ItemStack(Material.COMPASS);
+                ItemMeta meta = newKit.getItemMeta();
 
-            Objects.requireNonNull(meta).setDisplayName(ChatColor.translateAlternateColorCodes('&', "&2Empty Kit Right Click To Create"));
+                Objects.requireNonNull(meta).setDisplayName(ChatColor.translateAlternateColorCodes('&', "&2Empty Kit Right Click To Create"));
 
-            newKit.setItemMeta(meta);
+                newKit.setItemMeta(meta);
 
-            // set nbt tags
-            NBTItem nbti = new NBTItem(newKit);
+                // set nbt tags
+                NBTItem nbti = new NBTItem(newKit);
 
-            // replace with microKits
-            nbti.setBoolean("microKits", true);
+                // replace with microKits
+                nbti.setBoolean("microKits", true);
 
-            newKit = nbti.getItem();
+                newKit = nbti.getItem();
 
-            // gives item
-            p.getInventory().addItem(newKit);
+                // gives item
+                p.getInventory().addItem(newKit);
 
-            p.sendMessage(mm.getMessage("receivedNewEmptyKit"));
-        }), 5, 2);
+                p.sendMessage(mm.getMessage("receivedNewEmptyKit"));
+            }), 5, 2);
+        }
 
         // stashed items
-        pane.addItem(new GuiItem(new ItemStack(Material.ENDER_CHEST), inventoryClickEvent -> {
-            // give player stashed items
-            Objects.requireNonNull(c.getConfigurationSection("stashed." + p.getUniqueId())).getKeys(false).forEach(key -> {
-                if (p.getInventory().firstEmpty() != -1) return;
+        if (p.hasPermission("microkits.stash")){
+            pane.addItem(new GuiItem(new ItemStack(Material.ENDER_CHEST), inventoryClickEvent -> {
+                // give player stashed items
+                Objects.requireNonNull(c.getConfigurationSection("stashed." + p.getUniqueId())).getKeys(false).forEach(key -> {
+                    if (p.getInventory().firstEmpty() != -1) return;
 
-                p.getInventory().addItem(c.getItemStack("stashed." + p.getUniqueId() + "." + key));
-                c.set("stashed." + p.getUniqueId() + "." + key, null);
-            });
+                    p.getInventory().addItem(c.getItemStack("stashed." + p.getUniqueId() + "." + key));
+                    c.set("stashed." + p.getUniqueId() + "." + key, null);
+                });
 
-            p.sendMessage(mm.getMessage("claimedStashedItems"));
+                p.sendMessage(mm.getMessage("claimedStashedItems"));
 
-        }), 0, 5);
+            }), 0, 5);
+        }
 
         // player language
-        pane.addItem(new GuiItem(new ItemStack(Material.REDSTONE_TORCH), inventoryClickEvent -> {
-            selectLanPlayer((Player) inventoryClickEvent.getWhoClicked());
-        }), 7, 2);
+        if (p.hasPermission("microkits.playerLan")){
+            pane.addItem(new GuiItem(new ItemStack(Material.REDSTONE_TORCH), inventoryClickEvent -> {
+                selectLanPlayer((Player) inventoryClickEvent.getWhoClicked());
+            }), 7, 2);
+        }
 
         // server language and messages
-        pane.addItem(new GuiItem(new ItemStack(Material.REDSTONE_BLOCK), inventoryClickEvent -> {
-            selectLanServer((Player) inventoryClickEvent.getWhoClicked());
-        }), 8, 5);
+        if (p.hasPermission("microkits.serverLan")){
+            pane.addItem(new GuiItem(new ItemStack(Material.REDSTONE_BLOCK), inventoryClickEvent -> {
+                selectLanServer((Player) inventoryClickEvent.getWhoClicked());
+            }), 8, 5);
+        }
+
+        // add preview item
 
         gui.addPane(pane);
 
         gui.show(p);
 
+    }
+
+    /**
+     * shows all player's kits, these kits are stored under "savedKits.UUID.KITID.contents.ITEMID
+     */
+    private void showPlayerKits(Player p) {
+        ChestGui gui = new ChestGui(6, "your kits: ");
+
+        gui.setOnGlobalClick(event -> event.setCancelled(true));
+
+        OutlinePane pane = new OutlinePane(0,0,9,6);
+
+        String s = "savedKits." + p.getUniqueId();
+
+        if (c.getConfigurationSection(s) == null) {
+            p.sendMessage(mm.getMessage("myKitsNotFound"));
+            p.closeInventory();
+            return;
+        }
+
+        for (String key : c.getConfigurationSection(s).getKeys(false)){
+            String kitName = c.getString(s + "." + key + ".kitName");
+            List<String> lore = c.getStringList(s + "." + key + ".lore");
+
+            ItemStack item = new ItemStack(Material.PAPER);
+            ItemMeta meta = item.getItemMeta();
+
+            meta.setDisplayName(kitName);
+
+            meta.setLore(lore);
+
+            item.setItemMeta(meta);
+
+            pane.addItem(new GuiItem(item));
+        }
+
+        gui.addPane(pane);
+
+        gui.show(p);
     }
 
     /**
@@ -140,7 +195,7 @@ public class GuiManager implements CommandExecutor, Listener {
      * @param p to show the inv
      * @param name of the new kit
      */
-    public void newKitGui(Player p, String name){
+    private void newKitGui(Player p, String name){
         // id = getNextID()
         int id = getAndUpdateNextKitUUID();
         UUID uuid = p.getUniqueId();
@@ -166,7 +221,6 @@ public class GuiManager implements CommandExecutor, Listener {
                 if (inv.getItem(i) == null) continue;
 
                 c.set(id + ".contents." + i, inv.getItem(i));
-                MicroKits.getInstance().saveConfig();
             }
 
             // create the item
@@ -200,6 +254,19 @@ public class GuiManager implements CommandExecutor, Listener {
 
             meta.setLore(lore);
 
+            // save kit in myKits
+            String s = "savedKits." + p.getUniqueId() + "." + id;
+            c.set(s + ".owner", uuid.toString());
+            c.set(s + ".kitName", name);
+            c.set(s + ".lore", lore);
+            for (int i = 0; i < inv.getSize(); i++) {
+                if (inv.getItem(i) == null) continue;
+
+                c.set(s + ".contents." + i, inv.getItem(i));
+            }
+
+            MicroKits.getInstance().saveConfig();
+
             newKit.setItemMeta(meta);
 
             // set nbt tags
@@ -225,7 +292,7 @@ public class GuiManager implements CommandExecutor, Listener {
      * opens a gui to allow a player to preview a kit
      * if kit has no id send message error
      */
-    public void previewKitGui(Player p){
+    private void previewKitGui(Player p){
         ItemStack itemInHand = p.getInventory().getItemInMainHand();
         NBTItem nbtItem = new NBTItem(itemInHand);
         if (!nbtItem.hasKey("id")){
@@ -271,7 +338,7 @@ public class GuiManager implements CommandExecutor, Listener {
     /**
      * allows the player to select a custom language in case the one defined by the server is not good
      */
-    public void selectLanPlayer(Player p){
+    private void selectLanPlayer(Player p){
         ChestGui gui = new ChestGui(3, "Select your language");
 
         gui.setOnGlobalClick(event -> event.setCancelled(true));
@@ -302,7 +369,7 @@ public class GuiManager implements CommandExecutor, Listener {
     /**
      * sets a default language and allows staff to define custom messages for each action
      */
-    public void selectLanServer(Player p){
+    private void selectLanServer(Player p){
         ChestGui gui = new ChestGui(3, "Select language to edit messages");
 
         gui.setOnGlobalClick(event -> event.setCancelled(true));
@@ -330,7 +397,7 @@ public class GuiManager implements CommandExecutor, Listener {
         gui.show(p);
     }
 
-    public void showMessagesGui(Player p , String lan){
+    private void showMessagesGui(Player p , String lan){
         ChestGui gui = new ChestGui(6, "editing messages");
 
         gui.setOnGlobalClick(event -> event.setCancelled(true));
@@ -373,7 +440,7 @@ public class GuiManager implements CommandExecutor, Listener {
         gui.show(p);
     }
 
-    public ItemStack itemStackBuilder(Material mat, String name, String lore){
+    private ItemStack itemStackBuilder(Material mat, String name, String lore){
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
 
@@ -387,7 +454,7 @@ public class GuiManager implements CommandExecutor, Listener {
     }
 
     @EventHandler
-    public void onMessageSentForNameOfKit(AsyncPlayerChatEvent e){
+    private void listenPendingMessage(AsyncPlayerChatEvent e){
         // set name of kit id 0
         // set message id 1
         // set title id 2
@@ -434,6 +501,11 @@ public class GuiManager implements CommandExecutor, Listener {
         ItemStack item = e.getPlayer().getInventory().getItemInMainHand();
         if (!item.getType().equals(Material.COMPASS)) return;
 
+        if (!e.getPlayer().hasPermission("microkits.newEmptyKit.claim")){
+            e.getPlayer().sendMessage(mm.getMessage("noPermToClaim"));
+            return;
+        }
+
         // check if player is already creating a kit
         if (pendingPlayersInChat.containsKey(e.getPlayer())){
             e.getPlayer().sendMessage(mm.getMessage("errorAlreadyCreatingKit"));
@@ -466,26 +538,12 @@ public class GuiManager implements CommandExecutor, Listener {
         if (args.length == 0) openMainGui(p);
         else if (args.length == 1) {
             if (args[0].equalsIgnoreCase("preview")) previewKitGui(p);
-            if (args[0].equalsIgnoreCase("checkLan")) new MessagesManager().getAllLanMessages("en");
-            if (args[0].equalsIgnoreCase("set")){
-                new MessagesManager().setMessageOfLan("en", "test0", "value of test0");
-                new MessagesManager().setMessageOfLan("en", "test1", "value of test1");
-                new MessagesManager().setMessageOfLan("en", "test2", "value of test2");
-                new MessagesManager().setMessageOfLan("en", "test3", "value of test3");
-            }
-            if (args[0].equalsIgnoreCase("setLan")){
-                new MessagesManager().setLan("test");
-                MicroKits.getInstance().saveConfig();
-            }
-            if (args[0].equalsIgnoreCase("setMessage")){
-                new MessagesManager().setMessageOfLan("en", "nameOfKitInChat", "&6&lit works omg omg UwU");
-            }
         }
         else return false;
         return true;
     }
 
-    public Integer getAndUpdateNextKitUUID(){
+    private Integer getAndUpdateNextKitUUID(){
         int id = c.getInt("nextUniqueID");
         c.set("nextUniqueID", id + 1);
         return id;

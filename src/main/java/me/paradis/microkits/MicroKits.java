@@ -27,7 +27,7 @@ public final class MicroKits extends JavaPlugin {
         this.getCommand("microkits").setExecutor(guiManager);
 
         //delete
-        this.getCommand("addNBT").setExecutor(new nbtCommandManager());
+        //this.getCommand("addNBT").setExecutor(new nbtCommandManager());
 
         getLogger().info("MicroKits Enabled - Made by Paradis");
     }
@@ -92,6 +92,15 @@ public final class MicroKits extends JavaPlugin {
 
         c.addDefault(smen + "newMessageSet" + m, "&6Type in chat the new message for this action");
         c.addDefault(smen + "newMessageSet" + d, "message on admin changing message of action");
+
+        c.addDefault(smen + "noPermToClaim" + m, "&6You don't have enough permission to claim this empty kit");
+        c.addDefault(smen + "noPermToClaim" + d, "message on player attempting to claim an empty kit");
+
+        c.addDefault(smen + "kitNotFound" + m, "&cThe kit you are trying to claim does not exist");
+        c.addDefault(smen + "kitNotFound" + d, "message on player claiming kit not existing");
+
+        c.addDefault(smen + "myKitsNotFound" + m, "&cYou currently have no kits to view");
+        c.addDefault(smen + "myKitsNotFound" + d, "message on player not having kits and clicking my kits");
 
         c.options().copyDefaults(true);
         saveConfig();
