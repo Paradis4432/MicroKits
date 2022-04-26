@@ -47,7 +47,7 @@ public class GuiManager implements CommandExecutor, Listener {
      * main menu to handle details
      */
     public void openMainGui(Player p) {
-        ChestGui gui = new ChestGui(6, "Close to save new kit");
+        ChestGui gui = new ChestGui(6, "Choose what to do here!");
 
         gui.setOnGlobalClick(event -> {
             event.setCancelled(true);
@@ -293,6 +293,10 @@ public class GuiManager implements CommandExecutor, Listener {
      * if kit has no id send message error
      */
     private void previewKitGui(Player p){
+        if (!p.hasPermission("microkits.preview")){
+            p.sendMessage(mm.getMessage("noPermToPreview"));
+            return;
+        }
         ItemStack itemInHand = p.getInventory().getItemInMainHand();
         NBTItem nbtItem = new NBTItem(itemInHand);
         if (!nbtItem.hasKey("id")){
@@ -346,12 +350,12 @@ public class GuiManager implements CommandExecutor, Listener {
         StaticPane pane = new StaticPane(0,0,9,3);
 
         // spanish
-        pane.addItem(new GuiItem(new ItemStack(Material.STONE_BUTTON), inventoryClickEvent -> {
-            // set player's language to spanish
-            mm.setPlayerLan((Player) inventoryClickEvent.getWhoClicked(), "es");
-            inventoryClickEvent.getWhoClicked().sendMessage(mm.getMessage("lanChanged"));
+        //pane.addItem(new GuiItem(new ItemStack(Material.STONE_BUTTON), inventoryClickEvent -> {
+        //    // set player's language to spanish
+        //    mm.setPlayerLan((Player) inventoryClickEvent.getWhoClicked(), "es");
+        //    inventoryClickEvent.getWhoClicked().sendMessage(mm.getMessage("lanChanged"));
 
-        }), 3,1);
+        //}), 3,1);
 
         // english
         pane.addItem(new GuiItem(new ItemStack(Material.OAK_BUTTON), inventoryClickEvent -> {
@@ -377,12 +381,12 @@ public class GuiManager implements CommandExecutor, Listener {
         StaticPane pane = new StaticPane(0,0,9,3);
 
         // spanish
-        pane.addItem(new GuiItem(new ItemStack(Material.STONE_BUTTON), inventoryClickEvent -> {
-            // show list of messages and allow to edit each one
+        //pane.addItem(new GuiItem(new ItemStack(Material.STONE_BUTTON), inventoryClickEvent -> {
+        //    // show list of messages and allow to edit each one
 
-            Player player = (Player) inventoryClickEvent.getWhoClicked();
-            showMessagesGui(player, "es");
-        }), 3,1);
+        //    Player player = (Player) inventoryClickEvent.getWhoClicked();
+        //    showMessagesGui(player, "es");
+        //}), 3,1);
 
         // english
         pane.addItem(new GuiItem(new ItemStack(Material.OAK_BUTTON), inventoryClickEvent -> {

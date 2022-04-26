@@ -102,6 +102,9 @@ public final class MicroKits extends JavaPlugin {
         c.addDefault(smen + "myKitsNotFound" + m, "&cYou currently have no kits to view");
         c.addDefault(smen + "myKitsNotFound" + d, "message on player not having kits and clicking my kits");
 
+        c.addDefault(smen + "noPermToPreview" + m, "&cYou do not have permission to preview this kit");
+        c.addDefault(smen + "noPermToPreview" + d, "message on player attempting to preview a kit without perms");
+
         c.options().copyDefaults(true);
         saveConfig();
     }
