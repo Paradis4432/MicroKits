@@ -82,10 +82,13 @@ public class MessagesManager {
         String lan = c.getString("lan");
         // add check for player
 
+        String prefix = c.getString("prefix");
+
         // check if path is null and remove objects.require non null
 
-        return ChatColor.translateAlternateColorCodes('&',
-                Objects.requireNonNull(c.getString("serverMessages." + lan + "." + path + ".message")));
+        String message = prefix + " " + c.getString("serverMessages." + lan + "." + path + ".message");
+
+        return ChatColor.translateAlternateColorCodes('&', message);
     }
 
     /**

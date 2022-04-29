@@ -56,6 +56,7 @@ public final class MicroKits extends JavaPlugin {
         String d = ".display";
 
         c.addDefault("lan", "en");
+        c.addDefault("prefix", "&6MicroKits");
 
         c.addDefault(smen + "nameOfKitInChat" + m, "&6Please type the name of the new kit in chat");
         c.addDefault(smen + "nameOfKitInChat" + d, "message sent when asking for name of kit");

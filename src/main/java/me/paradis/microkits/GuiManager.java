@@ -57,7 +57,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
         // new kit
         if (p.hasPermission("microkits.newKit")){
-            pane.addItem(new GuiItem(new ItemStack(Material.PAPER), inventoryClickEvent -> {
+            pane.addItem(new GuiItem(itemStackBuilder(Material.PAPER, "&6&lCreate New Kit"), inventoryClickEvent -> {
                 Player playerEvent = (Player) inventoryClickEvent.getWhoClicked();
 
                 // send player message "enter new name of kit"
@@ -72,7 +72,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
         // view my kits
         if (p.hasPermission("microkits.viewKits")){
-            pane.addItem(new GuiItem(new ItemStack(Material.BOOK), inventoryClickEvent -> {
+            pane.addItem(new GuiItem(itemStackBuilder(Material.BOOK, "&6&lView Your Kits"), inventoryClickEvent -> {
                 showPlayerKits((Player) inventoryClickEvent.getWhoClicked());
             }), 3,2);
 
@@ -80,7 +80,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
         // new empty kit
         if (p.hasPermission("microkits.newEmptyKit.create")){
-            pane.addItem(new GuiItem(new ItemStack(Material.COMPASS), inventoryClickEvent -> {
+            pane.addItem(new GuiItem(itemStackBuilder(Material.COMPASS, "&6&lCreate New Empty Kit"), inventoryClickEvent -> {
                 // give new empty kit to player
 
                 // create the item
@@ -108,7 +108,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
         // stashed items
         if (p.hasPermission("microkits.stash")){
-            pane.addItem(new GuiItem(new ItemStack(Material.ENDER_CHEST), inventoryClickEvent -> {
+            pane.addItem(new GuiItem(itemStackBuilder(Material.ENDER_CHEST, "&6&lClaim Stashed Items"), inventoryClickEvent -> {
                 // give player stashed items
                 Objects.requireNonNull(c.getConfigurationSection("stashed." + p.getUniqueId())).getKeys(false).forEach(key -> {
                     if (p.getInventory().firstEmpty() != -1) return;
@@ -124,14 +124,14 @@ public class GuiManager implements CommandExecutor, Listener {
 
         // player language
         if (p.hasPermission("microkits.playerLan")){
-            pane.addItem(new GuiItem(new ItemStack(Material.REDSTONE_TORCH), inventoryClickEvent -> {
+            pane.addItem(new GuiItem(itemStackBuilder(Material.REDSTONE_TORCH, "&5Change Language"), inventoryClickEvent -> {
                 selectLanPlayer((Player) inventoryClickEvent.getWhoClicked());
             }), 7, 2);
         }
 
         // server language and messages
         if (p.hasPermission("microkits.serverLan")){
-            pane.addItem(new GuiItem(new ItemStack(Material.REDSTONE_BLOCK), inventoryClickEvent -> {
+            pane.addItem(new GuiItem(itemStackBuilder(Material.REDSTONE_BLOCK, "&5Edit Server Messages"), inventoryClickEvent -> {
                 selectLanServer((Player) inventoryClickEvent.getWhoClicked());
             }), 8, 5);
         }
@@ -322,7 +322,7 @@ public class GuiManager implements CommandExecutor, Listener {
             // key is the slot number as int
             // key: 11 -> y 1 x 2
 
-            int x = 0;
+            int x;
             int y = 0;
             int keyInt = Integer.parseInt(key);
 
@@ -358,7 +358,8 @@ public class GuiManager implements CommandExecutor, Listener {
         //}), 3,1);
 
         // english
-        pane.addItem(new GuiItem(new ItemStack(Material.OAK_BUTTON), inventoryClickEvent -> {
+
+        pane.addItem(new GuiItem(itemStackBuilder(Material.OAK_BUTTON, "&7English"), inventoryClickEvent -> {
             // set player's language to english
             mm.setPlayerLan((Player) inventoryClickEvent.getWhoClicked(), "en");
             inventoryClickEvent.getWhoClicked().sendMessage(mm.getMessage("lanChanged"));
@@ -389,7 +390,7 @@ public class GuiManager implements CommandExecutor, Listener {
         //}), 3,1);
 
         // english
-        pane.addItem(new GuiItem(new ItemStack(Material.OAK_BUTTON), inventoryClickEvent -> {
+        pane.addItem(new GuiItem(itemStackBuilder(Material.OAK_BUTTON, "&7English"), inventoryClickEvent -> {
             // show list of messages and allow to edit each one
 
             Player player = (Player) inventoryClickEvent.getWhoClicked();
@@ -442,6 +443,17 @@ public class GuiManager implements CommandExecutor, Listener {
         gui.addPane(pane);
 
         gui.show(p);
+    }
+
+    private ItemStack itemStackBuilder(Material mat, String name){
+        ItemStack item = new ItemStack(mat);
+        ItemMeta meta = item.getItemMeta();
+
+        assert meta != null;
+        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+        item.setItemMeta(meta);
+
+        return item;
     }
 
     private ItemStack itemStackBuilder(Material mat, String name, String lore){
@@ -542,8 +554,16 @@ public class GuiManager implements CommandExecutor, Listener {
         if (args.length == 0) openMainGui(p);
         else if (args.length == 1) {
             if (args[0].equalsIgnoreCase("preview")) previewKitGui(p);
+        } else {
+            if (args[0].equalsIgnoreCase("setPrefix")){
+                StringBuilder prefix = new StringBuilder();
+                for(int i = 1; i < args.length; i++){
+                    prefix.append(" ").append(args[i]);
+                }
+                c.set("prefix", prefix.toString());
+                p.sendMessage("new prefix set");
+            }
         }
-        else return false;
         return true;
     }
 
