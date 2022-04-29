@@ -556,6 +556,8 @@ public class GuiManager implements CommandExecutor, Listener {
             if (args[0].equalsIgnoreCase("preview")) previewKitGui(p);
         } else {
             if (args[0].equalsIgnoreCase("setPrefix")){
+                if (!p.hasPermission("microkits.setPrefix")) return false;
+
                 StringBuilder prefix = new StringBuilder();
                 for(int i = 1; i < args.length; i++){
                     prefix.append(" ").append(args[i]);
