@@ -26,6 +26,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 public class GuiManager implements CommandExecutor, Listener {
 
@@ -41,6 +42,7 @@ public class GuiManager implements CommandExecutor, Listener {
     //private ArrayList<Player> playerList = new ArrayList<>();
     private HashMap<Player, Integer> pendingPlayersInChat = new HashMap<>();
     private HashMap<Player, ArrayList<String>> pendingMessageChangeInChat = new HashMap<>();
+    private HashMap<Player, Long> cooldowns = new HashMap<>();
 
 
     /**
@@ -59,6 +61,15 @@ public class GuiManager implements CommandExecutor, Listener {
         if (p.hasPermission("microkits.newKit")){
             pane.addItem(new GuiItem(itemStackBuilder(Material.PAPER, "&6&lCreate New Kit"), inventoryClickEvent -> {
                 Player playerEvent = (Player) inventoryClickEvent.getWhoClicked();
+
+                // if player is in cooldown return mm.playerInCooldown
+                if (cooldowns.containsKey(playerEvent) && ((cooldowns.get(playerEvent) + getConfigCooldown()) >= (System.currentTimeMillis() / 1000))){
+                    // player is in cooldown cancel creation
+                    playerEvent.sendMessage(mm.getMessage("playerInCooldown"));
+                    return;
+                }
+                // remove player from cooldown
+                cooldowns.remove(playerEvent);
 
                 // send player message "enter new name of kit"
                 playerEvent.sendMessage(mm.getMessage("nameOfKitInChat"));
@@ -279,6 +290,9 @@ public class GuiManager implements CommandExecutor, Listener {
 
             newKit = nbti.getItem();
 
+            // adds player to cooldown
+            cooldowns.put(p, System.currentTimeMillis() / 1000);
+
             // gives item and opens gui to save new items
             p.getInventory().addItem(newKit);
 
@@ -292,18 +306,8 @@ public class GuiManager implements CommandExecutor, Listener {
      * opens a gui to allow a player to preview a kit
      * if kit has no id send message error
      */
-    private void previewKitGui(Player p){
-        if (!p.hasPermission("microkits.preview")){
-            p.sendMessage(mm.getMessage("noPermToPreview"));
-            return;
-        }
-        ItemStack itemInHand = p.getInventory().getItemInMainHand();
-        NBTItem nbtItem = new NBTItem(itemInHand);
-        if (!nbtItem.hasKey("id")){
-            p.sendMessage(mm.getMessage("errorPreviewKit"));
-            return;
-        }
-        int kitID = nbtItem.getInteger("id");
+    private void previewKitGuiID(Player p, Integer kitID){
+
 
         // create gui and add items in pane
         ChestGui gui = new ChestGui(6, "previewing kit id: " + kitID);
@@ -553,7 +557,24 @@ public class GuiManager implements CommandExecutor, Listener {
         Player p = (Player) sender;
         if (args.length == 0) openMainGui(p);
         else if (args.length == 1) {
-            if (args[0].equalsIgnoreCase("preview")) previewKitGui(p);
+            if (args[0].equalsIgnoreCase("preview")){
+                if (!p.hasPermission("microkits.preview")){
+                    p.sendMessage(mm.getMessage("noPermToPreview"));
+                    return true;
+                }
+                ItemStack itemInHand = p.getInventory().getItemInMainHand();
+
+                if (itemInHand == null || itemInHand.getType().isAir())return true;
+
+                NBTItem nbtItem = new NBTItem(itemInHand);
+                if (!nbtItem.hasKey("id")){
+                    p.sendMessage(mm.getMessage("errorPreviewKit"));
+                    return true;
+                }
+                int kitID = nbtItem.getInteger("id");
+
+                previewKitGuiID(p, kitID);
+            }
         } else {
             if (args[0].equalsIgnoreCase("setPrefix")){
                 if (!p.hasPermission("microkits.setPrefix")) return false;
@@ -564,6 +585,29 @@ public class GuiManager implements CommandExecutor, Listener {
                 }
                 c.set("prefix", prefix.toString());
                 p.sendMessage("new prefix set");
+            } else if (args[0].equalsIgnoreCase("setcooldown")){
+                if (!p.hasPermission("microkits.setCooldown")) return false;
+
+                try {
+                    Integer cooldown = Integer.parseInt(args[1]);
+                    c.set("cooldown", cooldown);
+                    p.sendMessage("new cooldown to create kit set to " + cooldown);
+
+                } catch (NumberFormatException e){
+                    p.sendMessage("usage: /microkits setcooldown [cooldown in seconds]");
+                    return true;
+                }
+            } else if (args[0].equalsIgnoreCase("preview")){
+                if (!p.hasPermission("microkits.preview")) return false;
+
+                try {
+                    Integer kitID = Integer.parseInt(args[1]);
+                    previewKitGuiID(p, kitID);
+
+                } catch (NumberFormatException e){
+                    p.sendMessage(ChatColor.GOLD + "usage: /microkits preview [kit id]");
+                    return true;
+                }
             }
         }
         return true;
@@ -574,5 +618,13 @@ public class GuiManager implements CommandExecutor, Listener {
         c.set("nextUniqueID", id + 1);
         return id;
 
+    }
+
+    private Integer getConfigCooldown(){
+        if (c.get("cooldown") == null) {
+            c.set("cooldown", 10);
+            System.out.println("ERROR - microkits no cooldown found, setting to 10");
+        }
+        return (Integer) c.get("cooldown");
     }
 }

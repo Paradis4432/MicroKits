@@ -57,6 +57,7 @@ public final class MicroKits extends JavaPlugin {
 
         c.addDefault("lan", "en");
         c.addDefault("prefix", "&6MicroKits");
+        c.addDefault("cooldown", 10);
 
         c.addDefault(smen + "nameOfKitInChat" + m, "&6Please type the name of the new kit in chat");
         c.addDefault(smen + "nameOfKitInChat" + d, "message sent when asking for name of kit");
@@ -105,6 +106,9 @@ public final class MicroKits extends JavaPlugin {
 
         c.addDefault(smen + "noPermToPreview" + m, "&cYou do not have permission to preview this kit");
         c.addDefault(smen + "noPermToPreview" + d, "message on player attempting to preview a kit without perms");
+
+        c.addDefault(smen + "playerInCooldown" + m, "&cYou are in cooldown");
+        c.addDefault(smen + "playerInCooldown" + d, "message on player creating kit while in cooldown");
 
         c.options().copyDefaults(true);
         saveConfig();

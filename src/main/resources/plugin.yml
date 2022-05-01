@@ -25,6 +25,7 @@ permissions:
       microkits.playerLan: true
       microkits.serverLan: true
       microkits.preview: true
+      microkits.setCooldown: true
   microkits.open:
     description: allows the player to open the main gui
     default: op
@@ -52,4 +53,8 @@ permissions:
   microkits.preview:
     description: allow the player to preview any kit
     default: op
+  microkits.setCooldown:
+    description: sets the cooldown to create a new kit
+    default: op
+
 
