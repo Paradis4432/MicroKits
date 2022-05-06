@@ -186,7 +186,12 @@ public class GuiManager implements CommandExecutor, Listener {
 
             item.setItemMeta(meta);
 
-            pane.addItem(new GuiItem(item));
+            pane.addItem(new GuiItem(item, event -> {
+                // remove the items from the player
+                // add to active kits
+                // give paper to player
+
+            }));
         }
 
         gui.addPane(pane);
