@@ -121,15 +121,26 @@ public class GuiManager implements CommandExecutor, Listener {
         // stashed items
         if (p.hasPermission("microkits.stash")){
             pane.addItem(new GuiItem(itemStackBuilder(Material.ENDER_CHEST, "&6&lClaim Stashed Items"), inventoryClickEvent -> {
+                if (c.getConfigurationSection("stashed." + p.getUniqueId()) == null){
+                    p.sendMessage(mm.getMessage("noStashedItems"));
+                    return;
+                }
+                System.out.println(c.getConfigurationSection("stashed." + p.getUniqueId()).getKeys(false).size());
+                if (c.getConfigurationSection("stashed." + p.getUniqueId()).getKeys(false).size() == 0){
+                    p.sendMessage(mm.getMessage("noStashedItems"));
+                    return;
+                }
                 // give player stashed items
                 Objects.requireNonNull(c.getConfigurationSection("stashed." + p.getUniqueId())).getKeys(false).forEach(key -> {
-                    if (p.getInventory().firstEmpty() != -1) return;
+
+                    if (p.getInventory().firstEmpty() == -1) return;
 
                     p.getInventory().addItem(c.getItemStack("stashed." + p.getUniqueId() + "." + key));
                     c.set("stashed." + p.getUniqueId() + "." + key, null);
+                    p.sendMessage(mm.getMessage("claimedStashedItems"));
+
                 });
 
-                p.sendMessage(mm.getMessage("claimedStashedItems"));
 
             }), 0, 5);
         }

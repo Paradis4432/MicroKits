@@ -110,6 +110,9 @@ public final class MicroKits extends JavaPlugin {
         c.addDefault(smen + "playerInCooldown" + m, "&cYou are in cooldown");
         c.addDefault(smen + "playerInCooldown" + d, "message on player creating kit while in cooldown");
 
+        c.addDefault(smen + "noStashedItems" + m, "&6You do not have any stashed items");
+        c.addDefault(smen + "noStashedItems" + d, "message on player not having stashed items");
+
         c.options().copyDefaults(true);
         saveConfig();
     }
