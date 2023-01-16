@@ -34,6 +34,7 @@ public class GuiManager implements CommandExecutor, Listener {
     private MessagesManager mm = new MessagesManager();
 
     /**
+     * test
      * hashmap<Player, int> made to listen for player message
      * if int = 0: listening for kit name
      * if int = 1: listening for new message for config
