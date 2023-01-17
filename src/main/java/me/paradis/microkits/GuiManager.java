@@ -26,7 +26,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 public class GuiManager implements CommandExecutor, Listener {
 
@@ -125,7 +124,7 @@ public class GuiManager implements CommandExecutor, Listener {
                     p.sendMessage(mm.getMessage("noStashedItems"));
                     return;
                 }
-                System.out.println(c.getConfigurationSection("stashed." + p.getUniqueId()).getKeys(false).size());
+                //System.out.println(c.getConfigurationSection("stashed." + p.getUniqueId()).getKeys(false).size());
                 if (c.getConfigurationSection("stashed." + p.getUniqueId()).getKeys(false).size() == 0){
                     p.sendMessage(mm.getMessage("noStashedItems"));
                     return;
@@ -198,10 +197,99 @@ public class GuiManager implements CommandExecutor, Listener {
 
             item.setItemMeta(meta);
 
-            pane.addItem(new GuiItem(item, event -> {
+            // key is id
+            pane.addItem(new GuiItem(item, inventoryClickEvent -> {
                 // remove the items from the player
                 // add to active kits
                 // give paper to player
+
+                //c.getConfigurationSection(s + "." + key + ".contents").getKeys(false);
+
+                boolean containsAll = true;
+                for (String itemID : c.getConfigurationSection(s + "." + key + ".contents").getKeys(false)){
+                    ItemStack i = c.getItemStack(s + "." + key + ".contents." + itemID);
+
+                    containsAll = p.getInventory().contains(i) && containsAll;
+
+                    System.out.println(containsAll);
+
+
+
+                }
+
+                if (containsAll){
+                    // take items and give kit
+                    int id = getAndUpdateNextKitUUID();
+                    UUID uuid = p.getUniqueId();
+
+                    c.set(id + ".owner", uuid.toString());
+                    c.set(id + ".kitName", c.getString(s + "." + key + ".kitName"));
+
+                    // create the item
+                    ItemStack newKit = new ItemStack(Material.PAPER);
+                    ItemMeta newKitMeta = newKit.getItemMeta();
+
+                    // add enchant
+                    newKitMeta.addEnchant(Enchantment.LUCK, 1, true);
+                    newKitMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+
+                    // set display name
+                    Objects.requireNonNull(newKitMeta).setDisplayName(ChatColor.translateAlternateColorCodes('&', c.getString(s + "." + key + ".kitName")));
+
+                    // set lore to id and list of items
+                    ArrayList<String> newKitLore = new ArrayList<>();
+
+                    newKitLore.add("Kit ID: " + id);
+
+                    //replace with inv.getContents?
+                    for (String itemID : c.getConfigurationSection(s + "." + key + ".contents").getKeys(false)){
+                        ItemStack i = c.getItemStack(s + "." + key + ".contents." + itemID);
+
+                        c.set(id + ".contents." + itemID, i);
+
+
+                        // remove items from player inv
+
+                        p.getInventory().removeItem(i);
+
+                        assert i != null;
+                        if (i.getItemMeta().hasDisplayName())
+                            newKitLore.add(i.getType() + " x " + i.getAmount() + " name: " + i.getItemMeta().getDisplayName());
+                        else
+                            newKitLore.add(i.getType() + " x " + i.getAmount());
+                    }
+
+                    newKitMeta.setLore(newKitLore);
+
+                    MicroKits.getInstance().saveConfig();
+
+                    newKit.setItemMeta(newKitMeta);
+
+                    // set nbt tags
+                    NBTItem nbti = new NBTItem(newKit);
+                    // replace with microKits
+                    nbti.setBoolean("microKits", true);
+                    nbti.setInteger("id", id);
+                    nbti.setUUID("owner", uuid);
+                    //nbti.setString("display", null); deletes the display name of item
+
+                    newKit = nbti.getItem();
+
+                    // adds player to cooldown
+                    cooldowns.put(p, System.currentTimeMillis() / 1000);
+
+                    // gives item and opens gui to save new items
+                    p.getInventory().addItem(newKit);
+
+                    // change message TODO
+                    p.sendMessage(mm.getMessage("newKitSaved"));
+
+                } else{
+                    // send message not enough items
+                }
+
+
+
 
             }));
         }
@@ -242,6 +330,7 @@ public class GuiManager implements CommandExecutor, Listener {
 
             c.set(id + ".owner", uuid.toString());
             c.set(id + ".kitName", name);
+
             // save inv.getContents
 
             //replace with inv.getContents?
