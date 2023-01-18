@@ -212,9 +212,6 @@ public class GuiManager implements CommandExecutor, Listener {
                     containsAll = p.getInventory().contains(i) && containsAll;
 
                     System.out.println(containsAll);
-
-
-
                 }
 
                 if (containsAll){
