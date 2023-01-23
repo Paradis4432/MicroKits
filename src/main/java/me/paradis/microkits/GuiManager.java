@@ -209,9 +209,9 @@ public class GuiManager implements CommandExecutor, Listener {
                 for (String itemID : c.getConfigurationSection(s + "." + key + ".contents").getKeys(false)){
                     ItemStack i = c.getItemStack(s + "." + key + ".contents." + itemID);
 
-                    containsAll = p.getInventory().contains(i) && containsAll;
+                    containsAll = p.getInventory().containsAtLeast(i, i.getAmount()) && containsAll;
 
-                    System.out.println(containsAll);
+                    // System.out.println(containsAll);
                 }
 
                 if (containsAll){
