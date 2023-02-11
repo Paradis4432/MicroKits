@@ -657,26 +657,52 @@ public class GuiManager implements CommandExecutor, Listener {
             sender.sendMessage("cant use this command from console");
             return false;
         }
-        Player p = (Player) sender;
+                                       Player p = (Player) sender;
         if (args.length == 0) openMainGui(p);
         else if (args.length == 1) {
             if (args[0].equalsIgnoreCase("preview")){
-                if (!p.hasPermission("microkits.preview")){
-                    p.sendMessage(mm.getMessage("noPermToPreview"));
+                                if (!p.hasPermission("microkits.preview")){
+                                    p.sendMessage(mm.getMessage("noPermToPreview"));
+                                    return true;
+                                }
+                                ItemStack itemInHand = p.getInventory().getItemInMainHand();
+
+                                if (itemInHand == null || itemInHand.getType().isAir())return true;
+
+                                NBTItem nbtItem = new NBTItem(itemInHand);
+                                if (!nbtItem.hasKey("id")){
+                                    p.sendMessage(mm.getMessage("errorPreviewKit"));
+                                    return true;
+                                }
+                                int kitID = nbtItem.getInteger("id");
+
+                                previewKitGuiID(p, kitID);
+            } else if(args[0].equalsIgnoreCase("new")){
+                if(!p.hasPermission("microkits.newKit")){
+                    p.sendMessage(mm.getMessage("noPermToCreateKit"));
                     return true;
                 }
-                ItemStack itemInHand = p.getInventory().getItemInMainHand();
-
-                if (itemInHand == null || itemInHand.getType().isAir())return true;
-
-                NBTItem nbtItem = new NBTItem(itemInHand);
-                if (!nbtItem.hasKey("id")){
-                    p.sendMessage(mm.getMessage("errorPreviewKit"));
+                // if player is in cooldown return mm.playerInCooldown
+                if (cooldowns.containsKey(p) && ((cooldowns.get(p) + getConfigCooldown()) >= (System.currentTimeMillis() / 1000))){
+                    // player is in cooldown cancel creation
+                    p.sendMessage(mm.getMessage("playerInCooldown"));
                     return true;
                 }
-                int kitID = nbtItem.getInteger("id");
+                // remove player from cooldown
+                cooldowns.remove(p);
 
-                previewKitGuiID(p, kitID);
+                // send player message "enter new name of kit"
+                p.sendMessage(mm.getMessage("nameOfKitInChat"));
+
+                // close gui, save player in list
+                p.closeInventory();
+                pendingPlayersInChat.put(p, 0);
+            }else if(args[0].equalsIgnoreCase("mykits")){
+                if(!p.hasPermission("microkits.viewKits")){
+                    p.sendMessage(mm.getMessage("noPermToViewKits"));
+                    return true;
+                }
+                showPlayerKits(p);
             }
         } else {
             if (args[0].equalsIgnoreCase("setPrefix")){
