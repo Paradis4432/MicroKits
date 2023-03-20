@@ -29,8 +29,8 @@ import java.util.*;
 
 public class GuiManager implements CommandExecutor, Listener {
 
-    private FileConfiguration c = MicroKits.getInstance().getConfig();
-    private MessagesManager mm = new MessagesManager();
+    private final FileConfiguration c = MicroKits.getInstance().getConfig();
+    private final MessagesManager mm = new MessagesManager();
 
     /**
      * test
@@ -40,9 +40,9 @@ public class GuiManager implements CommandExecutor, Listener {
      * if int = 2: listening for new title for config
      */
     //private ArrayList<Player> playerList = new ArrayList<>();
-    private HashMap<Player, Integer> pendingPlayersInChat = new HashMap<>();
-    private HashMap<Player, ArrayList<String>> pendingMessageChangeInChat = new HashMap<>();
-    private HashMap<Player, Long> cooldowns = new HashMap<>();
+    private final HashMap<Player, Integer> pendingPlayersInChat = new HashMap<>();
+    private final HashMap<Player, ArrayList<String>> pendingMessageChangeInChat = new HashMap<>();
+    private final HashMap<Player, Long> cooldowns = new HashMap<>();
 
 
     /**
@@ -657,7 +657,7 @@ public class GuiManager implements CommandExecutor, Listener {
             sender.sendMessage("cant use this command from console");
             return false;
         }
-                                       Player p = (Player) sender;
+        Player p = (Player) sender;
         if (args.length == 0) openMainGui(p);
         else if (args.length == 1) {
             if (args[0].equalsIgnoreCase("preview")){

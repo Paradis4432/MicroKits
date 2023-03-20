@@ -27,7 +27,7 @@ import java.util.Objects;
  */
 public class MessagesManager {
 
-    private FileConfiguration c = MicroKits.getInstance().getConfig();
+    private final FileConfiguration c = MicroKits.getInstance().getConfig();
 
     /**
      * sets the default language of the server

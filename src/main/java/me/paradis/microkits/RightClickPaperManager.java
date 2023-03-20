@@ -16,8 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class RightClickPaperManager implements Listener {
 
-    private FileConfiguration c = MicroKits.getInstance().getConfig();
-    private MessagesManager mm = new MessagesManager();
+    private final FileConfiguration c = MicroKits.getInstance().getConfig();
+    private final MessagesManager mm = new MessagesManager();
 
     /**
      * handles right click of paper, if kit is full, gives items, otherwise open gui to set
