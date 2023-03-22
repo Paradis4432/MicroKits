@@ -26,23 +26,23 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 public class GuiManager implements CommandExecutor, Listener {
 
-    private FileConfiguration c = MicroKits.getInstance().getConfig();
-    private MessagesManager mm = new MessagesManager();
+    private final FileConfiguration c = MicroKits.getInstance().getConfig();
+    private final MessagesManager mm = new MessagesManager();
 
     /**
+     * test
      * hashmap<Player, int> made to listen for player message
      * if int = 0: listening for kit name
      * if int = 1: listening for new message for config
      * if int = 2: listening for new title for config
      */
     //private ArrayList<Player> playerList = new ArrayList<>();
-    private HashMap<Player, Integer> pendingPlayersInChat = new HashMap<>();
-    private HashMap<Player, ArrayList<String>> pendingMessageChangeInChat = new HashMap<>();
-    private HashMap<Player, Long> cooldowns = new HashMap<>();
+    private final HashMap<Player, Integer> pendingPlayersInChat = new HashMap<>();
+    private final HashMap<Player, ArrayList<String>> pendingMessageChangeInChat = new HashMap<>();
+    private final HashMap<Player, Long> cooldowns = new HashMap<>();
 
 
     /**
@@ -120,15 +120,26 @@ public class GuiManager implements CommandExecutor, Listener {
         // stashed items
         if (p.hasPermission("microkits.stash")){
             pane.addItem(new GuiItem(itemStackBuilder(Material.ENDER_CHEST, "&6&lClaim Stashed Items"), inventoryClickEvent -> {
+                if (c.getConfigurationSection("stashed." + p.getUniqueId()) == null){
+                    p.sendMessage(mm.getMessage("noStashedItems"));
+                    return;
+                }
+                //System.out.println(c.getConfigurationSection("stashed." + p.getUniqueId()).getKeys(false).size());
+                if (c.getConfigurationSection("stashed." + p.getUniqueId()).getKeys(false).size() == 0){
+                    p.sendMessage(mm.getMessage("noStashedItems"));
+                    return;
+                }
                 // give player stashed items
                 Objects.requireNonNull(c.getConfigurationSection("stashed." + p.getUniqueId())).getKeys(false).forEach(key -> {
-                    if (p.getInventory().firstEmpty() != -1) return;
+
+                    if (p.getInventory().firstEmpty() == -1) return;
 
                     p.getInventory().addItem(c.getItemStack("stashed." + p.getUniqueId() + "." + key));
                     c.set("stashed." + p.getUniqueId() + "." + key, null);
+                    p.sendMessage(mm.getMessage("claimedStashedItems"));
+
                 });
 
-                p.sendMessage(mm.getMessage("claimedStashedItems"));
 
             }), 0, 5);
         }
@@ -186,10 +197,97 @@ public class GuiManager implements CommandExecutor, Listener {
 
             item.setItemMeta(meta);
 
-            pane.addItem(new GuiItem(item, event -> {
+            // key is id
+            pane.addItem(new GuiItem(item, inventoryClickEvent -> {
                 // remove the items from the player
                 // add to active kits
                 // give paper to player
+
+                //c.getConfigurationSection(s + "." + key + ".contents").getKeys(false);
+
+                boolean containsAll = true;
+                for (String itemID : c.getConfigurationSection(s + "." + key + ".contents").getKeys(false)){
+                    ItemStack i = c.getItemStack(s + "." + key + ".contents." + itemID);
+
+                    containsAll = p.getInventory().containsAtLeast(i, i.getAmount()) && containsAll;
+
+                    // System.out.println(containsAll);
+                }
+
+                if (containsAll){
+                    // take items and give kit
+                    int id = getAndUpdateNextKitUUID();
+                    UUID uuid = p.getUniqueId();
+
+                    c.set(id + ".owner", uuid.toString());
+                    c.set(id + ".kitName", c.getString(s + "." + key + ".kitName"));
+                    c.set(id + ".id", c.getString(s + "." + key + ".id"));
+
+                    // create the item
+                    ItemStack newKit = new ItemStack(Material.PAPER);
+                    ItemMeta newKitMeta = newKit.getItemMeta();
+
+                    // add enchant
+                    newKitMeta.addEnchant(Enchantment.LUCK, 1, true);
+                    newKitMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+
+                    // set display name
+                    Objects.requireNonNull(newKitMeta).setDisplayName(ChatColor.translateAlternateColorCodes('&', c.getString(s + "." + key + ".kitName")));
+
+                    // set lore to id and list of items
+                    ArrayList<String> newKitLore = new ArrayList<>();
+
+                    newKitLore.add("Kit ID: " + id);
+
+                    //replace with inv.getContents?
+                    for (String itemID : c.getConfigurationSection(s + "." + key + ".contents").getKeys(false)){
+                        ItemStack i = c.getItemStack(s + "." + key + ".contents." + itemID);
+
+                        c.set(id + ".contents." + itemID, i);
+
+
+                        // remove items from player inv
+
+                        p.getInventory().removeItem(i);
+
+                        assert i != null;
+                        if (i.getItemMeta().hasDisplayName())
+                            newKitLore.add(i.getType() + " x " + i.getAmount() + " name: " + i.getItemMeta().getDisplayName());
+                        else
+                            newKitLore.add(i.getType() + " x " + i.getAmount());
+                    }
+
+                    newKitMeta.setLore(newKitLore);
+
+                    MicroKits.getInstance().saveConfig();
+
+                    newKit.setItemMeta(newKitMeta);
+
+                    // set nbt tags
+                    NBTItem nbti = new NBTItem(newKit);
+                    // replace with microKits
+                    nbti.setBoolean("microKits", true);
+                    nbti.setInteger("id", id);
+                    nbti.setUUID("owner", uuid);
+                    //nbti.setString("display", null); deletes the display name of item
+
+                    newKit = nbti.getItem();
+
+                    // adds player to cooldown
+                    cooldowns.put(p, System.currentTimeMillis() / 1000);
+
+                    // gives item and opens gui to save new items
+                    p.getInventory().addItem(newKit);
+
+                    // change message TODO
+                    p.sendMessage(mm.getMessage("newKitSaved"));
+
+                } else{
+                    // send message not enough items
+                }
+
+
+
 
             }));
         }
@@ -230,6 +328,8 @@ public class GuiManager implements CommandExecutor, Listener {
 
             c.set(id + ".owner", uuid.toString());
             c.set(id + ".kitName", name);
+            c.set(id + ".id", id);
+
             // save inv.getContents
 
             //replace with inv.getContents?
@@ -274,6 +374,7 @@ public class GuiManager implements CommandExecutor, Listener {
             String s = "savedKits." + p.getUniqueId() + "." + id;
             c.set(s + ".owner", uuid.toString());
             c.set(s + ".kitName", name);
+            c.set(s + ".id", id);
             c.set(s + ".lore", lore);
             for (int i = 0; i < inv.getSize(); i++) {
                 if (inv.getItem(i) == null) continue;
@@ -553,6 +654,77 @@ public class GuiManager implements CommandExecutor, Listener {
 
     }
 
+    private void editKitGui(Player p, int kitId, int option){
+        ChestGui gui = new ChestGui(6, "Editing kit " + kitId);
+
+        // create new pane
+        StaticPane pane = new StaticPane(0,0,9,6);
+
+        if (option == 0) {
+            // found items from active kits
+            c.getConfigurationSection(kitId + ".contents").getKeys(false).forEach(s -> {
+                // create new
+                pane.addItem(new GuiItem(Objects.requireNonNull(c.getItemStack(kitId + ".contents." + s)), event -> {
+
+                }),Integer.parseInt(s) % 9, Integer.parseInt(s) / 9);
+            });
+            gui.addPane(pane);
+
+            gui.setOnClose(event -> {
+                Inventory inv = gui.getInventory();
+
+                // save inventory to config
+                for (int i = 0; i < inv.getSize(); i++) {
+                    ItemStack item = inv.getItem(i);
+                    if (item == null || item.getType().isAir()) continue;
+                    try {
+
+                        // remove nbti tag PublicBukkitValues from item
+                        NBTItem nbtItem = new NBTItem(item);
+                        nbtItem.removeKey("PublicBukkitValues");
+                        item = nbtItem.getItem();
+
+                        c.set(kitId + ".contents." + i, item);
+                        c.set("savedKits." + c.getString(kitId + ".owner") + "." + kitId + ".contents." + i, item);
+                    } catch (Exception e) {
+                        // handle exception here (e.g. log error message, show error to user)
+                        System.out.println("error saving item " + i + " to config");
+                    }
+                }
+            });
+        } else if (option == 1) {
+            // found kit in saved kits
+            c.getConfigurationSection("savedKits." + p.getUniqueId() + "." + kitId + ".contents").getKeys(false).forEach(s -> {
+                // create new
+                pane.addItem(new GuiItem(Objects.requireNonNull(c.getItemStack("savedKits." + p.getUniqueId() + "." + kitId + ".contents." + s)), event -> {
+
+                }),Integer.parseInt(s) % 9, Integer.parseInt(s) / 9);
+            });
+            gui.addPane(pane);
+
+            gui.setOnClose(event -> {
+                Inventory inv = gui.getInventory();
+
+                // save inventory to config
+                for (int i = 0; i < inv.getSize(); i++) {
+                    ItemStack item = inv.getItem(i);
+                    if (item == null || item.getType().isAir()) continue;
+                    try {
+                        NBTItem nbtItem = new NBTItem(item);
+                        nbtItem.removeKey("PublicBukkitValues");
+                        item = nbtItem.getItem();
+
+                        c.set("savedKits." + p.getUniqueId() + "." + kitId + ".contents." + i, item);
+                    } catch (Exception e) {
+                        // handle exception here (e.g. log error message, show error to user)
+                        System.out.println("error saving item " + i + " to config");
+                    }
+                }
+            });
+        }
+        gui.show(p);
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)){
@@ -579,6 +751,34 @@ public class GuiManager implements CommandExecutor, Listener {
                 int kitID = nbtItem.getInteger("id");
 
                 previewKitGuiID(p, kitID);
+            } else if(args[0].equalsIgnoreCase("new")){
+                if(!p.hasPermission("microkits.newKit")){
+                    p.sendMessage(mm.getMessage("noPermToCreateKit"));
+                    return true;
+                }
+                // if player is in cooldown return mm.playerInCooldown
+                if (cooldowns.containsKey(p) && ((cooldowns.get(p) + getConfigCooldown()) >= (System.currentTimeMillis() / 1000))){
+                    // player is in cooldown cancel creation
+                    p.sendMessage(mm.getMessage("playerInCooldown"));
+                    return true;
+                }
+                // remove player from cooldown
+                cooldowns.remove(p);
+
+                // send player message "enter new name of kit"
+                p.sendMessage(mm.getMessage("nameOfKitInChat"));
+
+                // close gui, save player in list
+                p.closeInventory();
+                pendingPlayersInChat.put(p, 0);
+            }else if(args[0].equalsIgnoreCase("mykits")){
+                if(!p.hasPermission("microkits.viewKits")){
+                    p.sendMessage(mm.getMessage("noPermToViewKits"));
+                    return true;
+                }
+                showPlayerKits(p);
+            } else {
+                p.sendMessage(ChatColor.GOLD + "command not found use /microkits for help");
             }
         } else {
             if (args[0].equalsIgnoreCase("setPrefix")){
@@ -613,6 +813,27 @@ public class GuiManager implements CommandExecutor, Listener {
                     p.sendMessage(ChatColor.GOLD + "usage: /microkits preview [kit id]");
                     return true;
                 }
+            } else if (args[0].equalsIgnoreCase("editkit")){
+                if (!p.hasPermission("microkits.admin")) return false;
+
+                try {
+                    Integer kitID = Integer.parseInt(args[1]);
+                    // check if kitId exists
+                    if (c.getConfigurationSection(kitID.toString()) != null){
+                        editKitGui(p, kitID, 0);
+                        return true;
+                    } else if (c.getConfigurationSection("savedKits." + p.getUniqueId() + "." + kitID) != null) {
+                        editKitGui(p, kitID, 1);
+                        return true;
+                    } else {
+                        p.sendMessage("kit with id " + kitID + " does not exist");
+                    }
+                } catch (NumberFormatException e){
+                    p.sendMessage(ChatColor.GOLD + "usage: /microkits editkit [kit id]");
+                    return true;
+                }
+            } else {
+                p.sendMessage(ChatColor.GOLD + "command not found use /microkits for help");
             }
         }
         return true;

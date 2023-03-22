@@ -110,6 +110,16 @@ public final class MicroKits extends JavaPlugin {
         c.addDefault(smen + "playerInCooldown" + m, "&cYou are in cooldown");
         c.addDefault(smen + "playerInCooldown" + d, "message on player creating kit while in cooldown");
 
+        c.addDefault(smen + "noStashedItems" + m, "&6You do not have any stashed items");
+        c.addDefault(smen + "noStashedItems" + d, "message on player not having stashed items");
+
+        c.addDefault(smen + "noPermToCreateKit" + m, "&cYou do not have permission to create a new kit");
+        c.addDefault(smen + "noPermToCreateKit" + d, "message on player not having permission to create a new kit via command");
+
+        c.addDefault(smen + "noPermToViewKits" + m, "&cYou do not have permission to view your kits");
+        c.addDefault(smen + "noPermToViewKits" + d, "message on player not having permission to view myKits ");
+
+
         c.options().copyDefaults(true);
         saveConfig();
     }

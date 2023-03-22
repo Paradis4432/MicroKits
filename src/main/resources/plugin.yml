@@ -26,6 +26,7 @@ permissions:
       microkits.serverLan: true
       microkits.preview: true
       microkits.setCooldown: true
+      microkits.admin: true
   microkits.open:
     description: allows the player to open the main gui
     default: op
@@ -56,5 +57,6 @@ permissions:
   microkits.setCooldown:
     description: sets the cooldown to create a new kit
     default: op
-
-
+  microkits.admin:
+    description: allows the player to use all admin commands
+    default: op
