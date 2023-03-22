@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 public class nbtCommandManager implements CommandExecutor {
-    private FileConfiguration c = MicroKits.getInstance().getConfig();
+    private final FileConfiguration c = MicroKits.getInstance().getConfig();
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
